@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { periods, quarters } from '@/data/reportData';
 
-export type TrendMode = 'QoQ' | 'YoY' | 'none';
+export type TrendMode = 'QoQ' | 'PoP' | 'YoY' | 'none';
 
 interface PeriodSelectorProps {
   selected: string;
@@ -104,8 +104,6 @@ function MultiSelectDropdown({
   );
 }
 
-const trendOptions: TrendMode[] = ['QoQ', 'YoY', 'none'];
-
 export default function PeriodSelector({
   selected,
   onSelect,
@@ -119,6 +117,7 @@ export default function PeriodSelector({
   onTrendModeChange,
 }: PeriodSelectorProps) {
   const isQuarter = selected.startsWith('Q');
+  const trendOptions: TrendMode[] = isQuarter ? ['QoQ', 'YoY', 'none'] : ['PoP', 'YoY', 'none'];
 
   return (
     <div className="p-4 bg-card rounded-lg border border-border shadow-sm">
