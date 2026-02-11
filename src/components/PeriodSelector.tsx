@@ -191,6 +191,9 @@ export default function PeriodSelector({
             </div>
           </div>
           <div className="ml-auto flex items-center gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mr-1">
+              Customize
+            </span>
             <MultiSelectDropdown
               label="Inputs"
               allItems={allInputCols}
