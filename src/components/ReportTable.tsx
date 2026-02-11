@@ -100,7 +100,7 @@ const dollarOutputs = new Set(['NSV $', 'GSV']);
 
 export default function ReportTable({ period, visibleInputs, visibleCalcs, visibleOutputs, trendMode }: ReportTableProps) {
   const isQuarter = period.startsWith('Q');
-  const data = useMemo(() => generateReportData(period), [period]);
+  const data = useMemo(() => generateReportData(period, trendMode), [period, trendMode]);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   const showTrend = trendMode !== 'none';
