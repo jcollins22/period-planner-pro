@@ -12,7 +12,7 @@ interface ReportTableProps {
 }
 
 const allInputCols = ['Planned Spend', 'Actual Spend', 'Working Spend', 'Impressions', 'Samples'];
-const allCalcCols = ['CPM & CPP', 'Coverage Factor', 'NSV Number', 'MAC Number'];
+const allCalcCols = ['CPM & CPP', 'Coverage Factor', 'NSV #', 'MAC #'];
 const allOutputPairs = [
   '% Contribution', 'Volume', 'Scaled Volume', 'NSV $', 'GSV', 'NSV ROI', 'MAC ROI', 'Effectiveness',
 ];
@@ -58,17 +58,17 @@ const inputTrendMap: Record<string, (r: RowData) => number | undefined> = {
 };
 
 const calcKeyMap: Record<string, (r: RowData) => number | undefined> = {
-  'CPM & CPP': (r) => r.cpmCpp,
-  'Coverage Factor': (r) => r.coverageFactor,
-  'NSV Number': (r) => r.nsvNumber,
-  'MAC Number': (r) => r.macNumber,
+   'CPM & CPP': (r) => r.cpmCpp,
+   'Coverage Factor': (r) => r.coverageFactor,
+   'NSV #': (r) => r.nsvNumber,
+   'MAC #': (r) => r.macNumber,
 };
 
 const calcTrendMap: Record<string, (r: RowData) => number | undefined> = {
-  'CPM & CPP': (r) => r.cpmCppTrend,
-  'Coverage Factor': (r) => r.coverageFactorTrend,
-  'NSV Number': (r) => r.nsvNumberTrend,
-  'MAC Number': (r) => r.macNumberTrend,
+   'CPM & CPP': (r) => r.cpmCppTrend,
+   'Coverage Factor': (r) => r.coverageFactorTrend,
+   'NSV #': (r) => r.nsvNumberTrend,
+   'MAC #': (r) => r.macNumberTrend,
 };
 
 const outputCurrentMap: Record<string, (r: RowData) => number | undefined> = {
@@ -94,7 +94,7 @@ const outputTrendMap: Record<string, (r: RowData) => number | undefined> = {
 };
 
 const dollarInputs = new Set(['Planned Spend', 'Actual Spend', 'Working Spend']);
-const dollarCalcs = new Set(['NSV Number', 'MAC Number']);
+const dollarCalcs = new Set(['NSV #', 'MAC #']);
 const pctOutputs = new Set(['% Contribution']);
 const dollarOutputs = new Set(['NSV $', 'GSV']);
 
@@ -140,22 +140,22 @@ export default function ReportTable({ period, visibleInputs, visibleCalcs, visib
           </React.Fragment>
         );
       })}
-      {filteredCalcs.map((col) => {
-        const v = calcKeyMap[col](row);
-        const trend = calcTrendMap[col](row);
-        return (
-          <React.Fragment key={`calc-${col}`}>
-            <td className="report-data-cell bg-report-calc-light">
-              {dollarCalcs.has(col) ? formatDollar(v) : formatNum(v)}
-            </td>
-            {showTrend && (
-              <td className={`report-data-cell bg-report-calc-light ${trendColor(trend)}`}>
-                {formatPct(trend)}
-              </td>
-            )}
-          </React.Fragment>
-        );
-      })}
+       {filteredCalcs.map((col) => {
+         const v = calcKeyMap[col](row);
+         const trend = calcTrendMap[col](row);
+         return (
+           <React.Fragment key={`calc-${col}`}>
+             <td className={`report-data-cell bg-report-calc-light ${['NSV #', 'MAC #'].includes(col) ? 'text-[11px] px-1' : ''}`}>
+               {dollarCalcs.has(col) ? formatDollar(v) : formatNum(v)}
+             </td>
+             {showTrend && (
+               <td className={`report-data-cell bg-report-calc-light ${trendColor(trend)} ${['NSV #', 'MAC #'].includes(col) ? 'text-[11px] px-1' : ''}`}>
+                 {formatPct(trend)}
+               </td>
+             )}
+           </React.Fragment>
+         );
+       })}
       {filteredOutputs.map((col) => {
         const cur = outputCurrentMap[col](row);
         const trend = outputTrendMap[col](row);
@@ -204,9 +204,9 @@ export default function ReportTable({ period, visibleInputs, visibleCalcs, visib
               {filteredInputs.map((c) => (
                 <th key={c} className="report-header-cell bg-report-input/80 border-x border-white/10" colSpan={colMultiplier}>{c}</th>
               ))}
-              {filteredCalcs.map((c) => (
-                <th key={c} className="report-header-cell bg-report-calc/80 border-x border-white/10" colSpan={colMultiplier}>{c}</th>
-              ))}
+               {filteredCalcs.map((c) => (
+                 <th key={c} className={`report-header-cell bg-report-calc/80 border-x border-white/10 ${['NSV #', 'MAC #'].includes(c) ? 'text-[11px]' : ''}`} colSpan={colMultiplier}>{c}</th>
+               ))}
               {filteredOutputs.map((c) => (
                 <th key={c} className="report-header-cell bg-report-output/80 border-x border-white/10" colSpan={colMultiplier}>{c}</th>
               ))}
