@@ -104,8 +104,15 @@ export function generateReportData(period: string): RowGroup[] {
     },
     {
       name: 'Social',
-      collapsible: false,
-      rows: [],
+      collapsible: true,
+      rows: [
+        generateRow('In-house Influencers', isQuarter),
+        generateRow('PR Box', isQuarter),
+        generateRow('Adfairy', isQuarter),
+        generateRow('Kale', isQuarter),
+        generateRow('New Social Channel 1', isQuarter),
+        generateRow('Essential Spend - Non Working', isQuarter),
+      ],
     },
     {
       name: 'Owned + Paid',
@@ -121,8 +128,12 @@ export function generateReportData(period: string): RowGroup[] {
     },
     {
       name: 'Experiential Marketing',
-      collapsible: false,
-      rows: [],
+      collapsible: true,
+      rows: [
+        generateRow('Sampling Program 1', isQuarter),
+        generateRow('Sampling Program 2', isQuarter),
+        generateRow('Essential Spend - Non Working', isQuarter),
+      ],
     },
     {
       name: 'Samples At/Near Store',
@@ -135,11 +146,6 @@ export function generateReportData(period: string): RowGroup[] {
     },
     {
       name: 'Shopper Marketing',
-      collapsible: false,
-      rows: [],
-    },
-    {
-      name: 'Shopper Tactics',
       collapsible: true,
       rows: [
         generateRow('Shopper Tactic 1', isQuarter),
