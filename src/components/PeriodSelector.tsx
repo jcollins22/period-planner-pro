@@ -121,103 +121,102 @@ export default function PeriodSelector({
   const isQuarter = selected.startsWith('Q');
 
   return (
-    <div className="p-4 bg-card rounded-lg border border-border shadow-sm space-y-3">
-      {/* Row 1: Period buttons */}
-      <div>
-        <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
-          Period
-        </label>
-        <div className="flex gap-1 flex-wrap">
-          {periods.map((p) => (
-            <button
-              key={p}
-              onClick={() => onSelect(p)}
-              className={`px-2.5 py-1 text-[12px] font-medium rounded transition-colors ${
-                selected === p
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'bg-secondary text-secondary-foreground hover:bg-accent'
-              }`}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Row 2: Quarter buttons */}
-      <div>
-        <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
-          Quarter
-        </label>
-        <div className="flex gap-1">
-          {quarters.map((q) => (
-            <button
-              key={q}
-              onClick={() => onSelect(q)}
-              className={`px-3 py-1 text-[12px] font-medium rounded transition-colors ${
-                selected === q
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'bg-secondary text-secondary-foreground hover:bg-accent'
-              }`}
-            >
-              {q}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Row 3: Column filters + Trend toggle + Selected indicator */}
-      <div className="flex items-center gap-3 pt-1 border-t border-border flex-wrap">
-        <MultiSelectDropdown
-          label="Inputs"
-          allItems={allInputCols}
-          selected={visibleInputs}
-          onChange={onVisibleInputsChange}
-          bgClass="bg-report-input-light"
-        />
-        {isQuarter && (
-          <MultiSelectDropdown
-            label="Calculated"
-            allItems={allCalcCols}
-            selected={visibleCalcs}
-            onChange={onVisibleCalcsChange}
-            bgClass="bg-report-calc-light"
-          />
-        )}
-        {isQuarter && (
-          <MultiSelectDropdown
-            label="Outputs"
-            allItems={allOutputCols}
-            selected={visibleOutputs}
-            onChange={onVisibleOutputsChange}
-            bgClass="bg-report-output-light"
-          />
-        )}
-
-        <div className="w-px h-6 bg-border" />
-
-        {/* Trend toggle */}
-        <div className="flex items-center gap-1">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mr-1">
-            Trend
-          </span>
-          {trendOptions.map((mode) => (
-            <button
-              key={mode}
-              onClick={() => onTrendModeChange(mode)}
-              className={`px-2.5 py-1 text-[12px] font-medium rounded transition-colors ${
-                trendMode === mode
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'bg-secondary text-secondary-foreground hover:bg-accent'
-              }`}
-            >
-              {mode === 'none' ? 'None' : mode}
-            </button>
-          ))}
+    <div className="p-4 bg-card rounded-lg border border-border shadow-sm">
+      <div className="flex gap-6">
+        {/* Left side: Period + Quarter stacked */}
+        <div className="space-y-3">
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+              Period
+            </label>
+            <div className="flex gap-1 flex-wrap">
+              {periods.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => onSelect(p)}
+                  className={`px-2.5 py-1 text-[12px] font-medium rounded transition-colors ${
+                    selected === p
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'bg-secondary text-secondary-foreground hover:bg-accent'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+              Quarter
+            </label>
+            <div className="flex gap-1">
+              {quarters.map((q) => (
+                <button
+                  key={q}
+                  onClick={() => onSelect(q)}
+                  className={`px-3 py-1 text-[12px] font-medium rounded transition-colors ${
+                    selected === q
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'bg-secondary text-secondary-foreground hover:bg-accent'
+                  }`}
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <div className="ml-auto text-[13px] font-semibold text-foreground">
-          Selected: <span className="text-primary">{selected}</span>
+        {/* Right side: Trend toggle on top, dropdowns below */}
+        <div className="ml-auto flex flex-col items-end gap-2">
+          {/* Trend toggle */}
+          <div className="flex items-center gap-1">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mr-1">
+              Trend
+            </span>
+            {trendOptions.map((mode) => (
+              <button
+                key={mode}
+                onClick={() => onTrendModeChange(mode)}
+                className={`px-2.5 py-1 text-[12px] font-medium rounded transition-colors ${
+                  trendMode === mode
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'bg-secondary text-secondary-foreground hover:bg-accent'
+                }`}
+              >
+                {mode === 'none' ? 'None' : mode}
+              </button>
+            ))}
+          </div>
+
+          {/* Column visibility dropdowns */}
+          <div className="flex items-center gap-2">
+            <MultiSelectDropdown
+              label="Inputs"
+              allItems={allInputCols}
+              selected={visibleInputs}
+              onChange={onVisibleInputsChange}
+              bgClass="bg-report-input-light"
+            />
+            {isQuarter && (
+              <MultiSelectDropdown
+                label="Calculated"
+                allItems={allCalcCols}
+                selected={visibleCalcs}
+                onChange={onVisibleCalcsChange}
+                bgClass="bg-report-calc-light"
+              />
+            )}
+            {isQuarter && (
+              <MultiSelectDropdown
+                label="Outputs"
+                allItems={allOutputCols}
+                selected={visibleOutputs}
+                onChange={onVisibleOutputsChange}
+                bgClass="bg-report-output-light"
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
