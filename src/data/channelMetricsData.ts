@@ -9,7 +9,7 @@ export interface ChannelGroup {
 export const channelGroups: ChannelGroup[] = [
   { name: 'Social', metrics: ['Working Spend', 'Impressions', 'Output Metric'] },
   { name: 'Shopper', metrics: ['Working Spend', 'Output Metric'] },
-  { name: 'Experiential Marketing', metrics: ['Working Spend', 'Samples', 'Output Metric'] },
+  { name: 'Experiential', metrics: ['Working Spend', 'Samples', 'Output Metric'] },
 ];
 
 function randomVal(min: number, max: number, decimals = 0): number {
