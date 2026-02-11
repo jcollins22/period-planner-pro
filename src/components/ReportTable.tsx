@@ -107,7 +107,7 @@ export default function ReportTable({ period, visibleInputs, visibleCalcs, visib
   const trendLabel = trendMode === 'none' ? '' : trendMode;
 
   const filteredInputs = allInputCols.filter((c) => visibleInputs.includes(c));
-  const filteredCalcs = isQuarter ? allCalcCols.filter((c) => visibleCalcs.includes(c)) : [];
+  const filteredCalcs = allCalcCols.filter((c) => visibleCalcs.includes(c));
   const filteredOutputs = isQuarter ? allOutputPairs.filter((c) => visibleOutputs.includes(c)) : [];
 
   const colMultiplier = showTrend ? 2 : 1;

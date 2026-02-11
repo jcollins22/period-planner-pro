@@ -65,19 +65,19 @@ function generateRow(channel: string, isQuarter: boolean): RowData {
     impressionsTrend: randomVal(-15, 15, 1),
     samples: randomVal(0, 50000),
     samplesTrend: randomVal(-15, 15, 1),
+    cpmCpp: randomVal(2, 25, 2),
+    cpmCppTrend: randomVal(-15, 15, 1),
+    coverageFactor: randomVal(0.1, 1, 2),
+    coverageFactorTrend: randomVal(-15, 15, 1),
+    nsvNumber: randomVal(100000, 2000000),
+    nsvNumberTrend: randomVal(-15, 15, 1),
+    macNumber: randomVal(50000, 1000000),
+    macNumberTrend: randomVal(-15, 15, 1),
   };
 
   if (isQuarter) {
     return {
       ...base,
-      cpmCpp: randomVal(2, 25, 2),
-      cpmCppTrend: randomVal(-15, 15, 1),
-      coverageFactor: randomVal(0.1, 1, 2),
-      coverageFactorTrend: randomVal(-15, 15, 1),
-      nsvNumber: randomVal(100000, 2000000),
-      nsvNumberTrend: randomVal(-15, 15, 1),
-      macNumber: randomVal(50000, 1000000),
-      macNumberTrend: randomVal(-15, 15, 1),
       pctContribCurrent: randomVal(0.1, 15, 1),
       pctContribQoQ: randomVal(-5, 5, 1),
       volumeCurrent: randomVal(10000, 500000),
