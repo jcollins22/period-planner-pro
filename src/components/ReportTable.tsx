@@ -104,7 +104,7 @@ export default function ReportTable({ period, visibleInputs, visibleCalcs, visib
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   const showTrend = trendMode !== 'none';
-  const trendLabel = trendMode === 'none' ? '' : trendMode;
+  const trendLabel = trendMode === 'none' ? '' : trendMode === 'QoQ' ? (isQuarter ? 'QoQ' : 'PoP') : trendMode;
 
   const filteredInputs = allInputCols.filter((c) => visibleInputs.includes(c));
   const filteredCalcs = allCalcCols.filter((c) => visibleCalcs.includes(c));
