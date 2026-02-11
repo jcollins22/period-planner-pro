@@ -44,7 +44,8 @@ const quarterPeriods: Record<string, string[]> = {
   Q1: ['P1', 'P2', 'P3'],
   Q2: ['P4', 'P5', 'P6'],
   Q3: ['P7', 'P8', 'P9'],
-  Q4: ['P10', 'P11', 'P12', 'P13'],
+  Q4: ['P10', 'P11', 'P12'],
+  P13: ['P13'],
 };
 
 export { quarterPeriods };

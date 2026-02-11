@@ -15,7 +15,7 @@ import {
 } from '@/data/channelMetricsData';
 
 const allPeriods = Array.from({ length: 13 }, (_, i) => `P${i + 1}`);
-const quarters = ['Q1', 'Q2', 'Q3', 'Q4'] as const;
+const quarters = ['Q1', 'Q2', 'Q3', 'Q4', 'P13'] as const;
 
 const formatVal = (metric: string, v: number) => {
   if (metric === 'Working Spend' || metric === 'GSV' || metric === 'NSV')
