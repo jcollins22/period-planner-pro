@@ -6,14 +6,23 @@ export const quarters = ['Q1', 'Q2', 'Q3', 'Q4'] as const;
 export interface RowData {
   channel: string;
   plannedSpend?: number;
+  plannedSpendTrend?: number;
   actualSpend?: number;
+  actualSpendTrend?: number;
   workingSpend?: number;
+  workingSpendTrend?: number;
   impressions?: number;
+  impressionsTrend?: number;
   samples?: number;
+  samplesTrend?: number;
   cpmCpp?: number;
+  cpmCppTrend?: number;
   coverageFactor?: number;
+  coverageFactorTrend?: number;
   nsvNumber?: number;
+  nsvNumberTrend?: number;
   macNumber?: number;
+  macNumberTrend?: number;
   pctContribCurrent?: number;
   pctContribQoQ?: number;
   volumeCurrent?: number;
@@ -47,19 +56,28 @@ function generateRow(channel: string, isQuarter: boolean): RowData {
   const base: RowData = {
     channel,
     plannedSpend: randomVal(5000, 200000),
+    plannedSpendTrend: randomVal(-15, 15, 1),
     actualSpend: randomVal(5000, 200000),
+    actualSpendTrend: randomVal(-15, 15, 1),
     workingSpend: randomVal(3000, 150000),
+    workingSpendTrend: randomVal(-15, 15, 1),
     impressions: randomVal(100000, 5000000),
+    impressionsTrend: randomVal(-15, 15, 1),
     samples: randomVal(0, 50000),
+    samplesTrend: randomVal(-15, 15, 1),
   };
 
   if (isQuarter) {
     return {
       ...base,
       cpmCpp: randomVal(2, 25, 2),
+      cpmCppTrend: randomVal(-15, 15, 1),
       coverageFactor: randomVal(0.1, 1, 2),
+      coverageFactorTrend: randomVal(-15, 15, 1),
       nsvNumber: randomVal(100000, 2000000),
+      nsvNumberTrend: randomVal(-15, 15, 1),
       macNumber: randomVal(50000, 1000000),
+      macNumberTrend: randomVal(-15, 15, 1),
       pctContribCurrent: randomVal(0.1, 15, 1),
       pctContribQoQ: randomVal(-5, 5, 1),
       volumeCurrent: randomVal(10000, 500000),

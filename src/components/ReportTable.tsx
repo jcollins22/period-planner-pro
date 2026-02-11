@@ -49,11 +49,26 @@ const inputKeyMap: Record<string, (r: RowData) => number | undefined> = {
   'Samples': (r) => r.samples,
 };
 
+const inputTrendMap: Record<string, (r: RowData) => number | undefined> = {
+  'Planned Spend': (r) => r.plannedSpendTrend,
+  'Actual Spend': (r) => r.actualSpendTrend,
+  'Working Spend': (r) => r.workingSpendTrend,
+  'Impressions': (r) => r.impressionsTrend,
+  'Samples': (r) => r.samplesTrend,
+};
+
 const calcKeyMap: Record<string, (r: RowData) => number | undefined> = {
   'CPM & CPP': (r) => r.cpmCpp,
   'Coverage Factor': (r) => r.coverageFactor,
   'NSV Number': (r) => r.nsvNumber,
   'MAC Number': (r) => r.macNumber,
+};
+
+const calcTrendMap: Record<string, (r: RowData) => number | undefined> = {
+  'CPM & CPP': (r) => r.cpmCppTrend,
+  'Coverage Factor': (r) => r.coverageFactorTrend,
+  'NSV Number': (r) => r.nsvNumberTrend,
+  'MAC Number': (r) => r.macNumberTrend,
 };
 
 const outputCurrentMap: Record<string, (r: RowData) => number | undefined> = {
@@ -95,9 +110,10 @@ export default function ReportTable({ period, visibleInputs, visibleCalcs, visib
   const filteredCalcs = isQuarter ? allCalcCols.filter((c) => visibleCalcs.includes(c)) : [];
   const filteredOutputs = isQuarter ? allOutputPairs.filter((c) => visibleOutputs.includes(c)) : [];
 
-  const totalDataCols = filteredInputs.length
-    + filteredCalcs.length
-    + filteredOutputs.length * (showTrend ? 2 : 1);
+  const colMultiplier = showTrend ? 2 : 1;
+  const totalDataCols = filteredInputs.length * colMultiplier
+    + filteredCalcs.length * colMultiplier
+    + filteredOutputs.length * colMultiplier;
 
   const toggle = (name: string) =>
     setCollapsed((prev) => ({ ...prev, [name]: !prev[name] }));
@@ -110,18 +126,34 @@ export default function ReportTable({ period, visibleInputs, visibleCalcs, visib
       </td>
       {filteredInputs.map((col) => {
         const v = inputKeyMap[col](row);
+        const trend = inputTrendMap[col](row);
         return (
-          <td key={`in-${col}`} className="report-data-cell bg-report-input-light">
-            {dollarInputs.has(col) ? formatDollar(v) : formatNum(v)}
-          </td>
+          <React.Fragment key={`in-${col}`}>
+            <td className="report-data-cell bg-report-input-light">
+              {dollarInputs.has(col) ? formatDollar(v) : formatNum(v)}
+            </td>
+            {showTrend && (
+              <td className={`report-data-cell bg-report-input-light ${trendColor(trend)}`}>
+                {formatPct(trend)}
+              </td>
+            )}
+          </React.Fragment>
         );
       })}
       {filteredCalcs.map((col) => {
         const v = calcKeyMap[col](row);
+        const trend = calcTrendMap[col](row);
         return (
-          <td key={`calc-${col}`} className="report-data-cell bg-report-calc-light">
-            {dollarCalcs.has(col) ? formatDollar(v) : formatNum(v)}
-          </td>
+          <React.Fragment key={`calc-${col}`}>
+            <td className="report-data-cell bg-report-calc-light">
+              {dollarCalcs.has(col) ? formatDollar(v) : formatNum(v)}
+            </td>
+            {showTrend && (
+              <td className={`report-data-cell bg-report-calc-light ${trendColor(trend)}`}>
+                {formatPct(trend)}
+              </td>
+            )}
+          </React.Fragment>
         );
       })}
       {filteredOutputs.map((col) => {
@@ -153,38 +185,48 @@ export default function ReportTable({ period, visibleInputs, visibleCalcs, visib
                 Channel
               </th>
               {filteredInputs.length > 0 && (
-                <th className="report-header-cell bg-report-input border-x border-white/10" colSpan={filteredInputs.length}>
+                <th className="report-header-cell bg-report-input border-x border-white/10" colSpan={filteredInputs.length * colMultiplier}>
                   Inputs
                 </th>
               )}
               {filteredCalcs.length > 0 && (
-                <th className="report-header-cell bg-report-calc border-x border-white/10" colSpan={filteredCalcs.length}>
+                <th className="report-header-cell bg-report-calc border-x border-white/10" colSpan={filteredCalcs.length * colMultiplier}>
                   Calculated / Reference
                 </th>
               )}
               {filteredOutputs.length > 0 && (
-                <th className="report-header-cell bg-report-output border-x border-white/10" colSpan={filteredOutputs.length * (showTrend ? 2 : 1)}>
+                <th className="report-header-cell bg-report-output border-x border-white/10" colSpan={filteredOutputs.length * colMultiplier}>
                   Outputs
                 </th>
               )}
             </tr>
             <tr className="bg-report-header/90 text-report-header-fg">
               {filteredInputs.map((c) => (
-                <th key={c} className="report-header-cell bg-report-input/80 border-x border-white/10">{c}</th>
+                <th key={c} className="report-header-cell bg-report-input/80 border-x border-white/10" colSpan={colMultiplier}>{c}</th>
               ))}
               {filteredCalcs.map((c) => (
-                <th key={c} className="report-header-cell bg-report-calc/80 border-x border-white/10">{c}</th>
+                <th key={c} className="report-header-cell bg-report-calc/80 border-x border-white/10" colSpan={colMultiplier}>{c}</th>
               ))}
               {filteredOutputs.map((c) => (
-                <th key={c} className="report-header-cell bg-report-output/80 border-x border-white/10" colSpan={showTrend ? 2 : 1}>{c}</th>
+                <th key={c} className="report-header-cell bg-report-output/80 border-x border-white/10" colSpan={colMultiplier}>{c}</th>
               ))}
             </tr>
             <tr className="bg-report-header/70 text-report-header-fg text-[10px]">
               {filteredInputs.map((c) => (
-                <th key={`p-${c}`} className="px-2 py-1 bg-report-input/60 border-x border-white/10 font-normal">{period}</th>
+                <React.Fragment key={`sub-${c}`}>
+                  <th className="px-2 py-1 bg-report-input/60 border-x border-white/10 font-normal">{period}</th>
+                  {showTrend && (
+                    <th className="px-2 py-1 bg-report-input/50 border-x border-white/5 font-medium">{trendLabel}</th>
+                  )}
+                </React.Fragment>
               ))}
               {filteredCalcs.map((c) => (
-                <th key={`p-${c}`} className="px-2 py-1 bg-report-calc/60 border-x border-white/10 font-normal">{period}</th>
+                <React.Fragment key={`sub-${c}`}>
+                  <th className="px-2 py-1 bg-report-calc/60 border-x border-white/10 font-normal">{period}</th>
+                  {showTrend && (
+                    <th className="px-2 py-1 bg-report-calc/50 border-x border-white/5 font-medium">{trendLabel}</th>
+                  )}
+                </React.Fragment>
               ))}
               {filteredOutputs.map((c) => (
                 <React.Fragment key={`sub-${c}`}>
