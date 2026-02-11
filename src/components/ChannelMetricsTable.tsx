@@ -127,7 +127,7 @@ export default function ChannelMetricsTable() {
                               <td
                                 key={q}
                                 colSpan={span}
-                                className="report-data-cell bg-report-output-light text-center"
+                                className="report-data-cell bg-report-output-light text-center border-2 border-primary/40"
                               >
                                 {val !== undefined ? formatOutputVal(selectedMetric, val) : '—'}
                               </td>
