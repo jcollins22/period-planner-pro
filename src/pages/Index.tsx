@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import PeriodSelector from '@/components/PeriodSelector';
+import PeriodSelector, { allInputCols, allCalcCols, allOutputCols, type TrendMode } from '@/components/PeriodSelector';
 import ReportTable from '@/components/ReportTable';
 
 const Index = () => {
   const [period, setPeriod] = useState('Q1');
+  const [visibleInputs, setVisibleInputs] = useState<string[]>([...allInputCols]);
+  const [visibleCalcs, setVisibleCalcs] = useState<string[]>([...allCalcCols]);
+  const [visibleOutputs, setVisibleOutputs] = useState<string[]>([...allOutputCols]);
+  const [trendMode, setTrendMode] = useState<TrendMode>('QoQ');
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
@@ -25,8 +29,25 @@ const Index = () => {
             Channel Metrics →
           </Link>
         </div>
-        <PeriodSelector selected={period} onSelect={setPeriod} />
-        <ReportTable period={period} />
+        <PeriodSelector
+          selected={period}
+          onSelect={setPeriod}
+          visibleInputs={visibleInputs}
+          onVisibleInputsChange={setVisibleInputs}
+          visibleCalcs={visibleCalcs}
+          onVisibleCalcsChange={setVisibleCalcs}
+          visibleOutputs={visibleOutputs}
+          onVisibleOutputsChange={setVisibleOutputs}
+          trendMode={trendMode}
+          onTrendModeChange={setTrendMode}
+        />
+        <ReportTable
+          period={period}
+          visibleInputs={visibleInputs}
+          visibleCalcs={visibleCalcs}
+          visibleOutputs={visibleOutputs}
+          trendMode={trendMode}
+        />
       </div>
     </div>
   );
