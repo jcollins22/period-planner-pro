@@ -58,8 +58,15 @@ export function generateChannelMetricsData(outputMetric: OutputMetric): ChannelM
     const metricsMap: Record<string, Record<string, number>> = {};
     for (const metric of group.metrics) {
       const periodMap: Record<string, number> = {};
-      for (let i = 1; i <= 13; i++) {
-        periodMap[`P${i}`] = generateMetricValue(metric, outputMetric);
+      if (metric === 'Output Metric') {
+        // One value per quarter (keyed by quarter name), P13 blank
+        for (const q of ['Q1', 'Q2', 'Q3', 'Q4']) {
+          periodMap[q] = generateMetricValue(metric, outputMetric);
+        }
+      } else {
+        for (let i = 1; i <= 13; i++) {
+          periodMap[`P${i}`] = generateMetricValue(metric, outputMetric);
+        }
       }
       metricsMap[metric] = periodMap;
     }
