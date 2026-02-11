@@ -63,6 +63,8 @@ export function generateChannelMetricsData(outputMetric: OutputMetric): ChannelM
         // One value per quarter (keyed by quarter name), P13 blank
         for (const q of ['Q1', 'Q2', 'Q3', 'Q4']) {
           periodMap[q] = generateMetricValue(metric, outputMetric);
+          // Add trend value (percentage change)
+          periodMap[`${q}_trend`] = randomVal(-25, 35, 1);
         }
       } else {
         for (let i = 1; i <= 13; i++) {

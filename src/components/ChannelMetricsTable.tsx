@@ -122,6 +122,7 @@ export default function ChannelMetricsTable() {
                         <>
                           {quarters.map((q) => {
                             const val = periodData[q];
+                            const trend = periodData[`${q}_trend`];
                             const span = quarterPeriods[q].length;
                             return (
                               <td
@@ -129,7 +130,14 @@ export default function ChannelMetricsTable() {
                                 colSpan={span}
                                 className="report-data-cell bg-report-output-light text-center border-2 border-primary/40"
                               >
-                                {val !== undefined ? formatOutputVal(selectedMetric, val) : '—'}
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <span>{val !== undefined ? formatOutputVal(selectedMetric, val) : '—'}</span>
+                                  {trend !== undefined && (
+                                    <span className={`text-[10px] font-medium ${trend > 0 ? 'text-emerald-600' : trend < 0 ? 'text-red-500' : ''}`}>
+                                      {trend > 0 ? '+' : ''}{trend.toFixed(1)}%
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                             );
                           })}
