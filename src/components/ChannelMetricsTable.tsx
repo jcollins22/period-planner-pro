@@ -117,21 +117,36 @@ export default function ChannelMetricsTable() {
                       >
                         {displayMetric}
                       </td>
-                      {allPeriods.map((p) => {
-                        const val = periodData[p];
-                        return (
-                          <td
-                            key={p}
-                            className={`report-data-cell ${isOutputMetric ? 'bg-report-output-light' : 'bg-report-input-light'}`}
-                          >
-                            {val !== undefined
-                              ? isOutputMetric
-                                ? formatOutputVal(selectedMetric, val)
-                                : formatVal(metric, val)
-                              : '—'}
-                          </td>
-                        );
-                      })}
+                      {isOutputMetric ? (
+                        // Render one merged cell per quarter, P13 blank
+                        <>
+                          {quarters.map((q) => {
+                            const val = periodData[q];
+                            const span = quarterPeriods[q].length;
+                            return (
+                              <td
+                                key={q}
+                                colSpan={span}
+                                className="report-data-cell bg-report-output-light text-center"
+                              >
+                                {val !== undefined ? formatOutputVal(selectedMetric, val) : '—'}
+                              </td>
+                            );
+                          })}
+                        </>
+                      ) : (
+                        allPeriods.map((p) => {
+                          const val = periodData[p];
+                          return (
+                            <td
+                              key={p}
+                              className="report-data-cell bg-report-input-light"
+                            >
+                              {val !== undefined ? formatVal(metric, val) : '—'}
+                            </td>
+                          );
+                        })
+                      )}
                     </tr>
                   );
                 })
