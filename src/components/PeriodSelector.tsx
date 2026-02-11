@@ -122,11 +122,11 @@ export default function PeriodSelector({
 
   return (
     <div className="p-4 bg-card rounded-lg border border-border shadow-sm">
-      <div className="flex gap-6">
-        {/* Left side: Period + Quarter stacked */}
-        <div className="space-y-3">
-          <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+      <div className="flex flex-col gap-3">
+        {/* Row 1: Period buttons (left) + Trend toggle (right) */}
+        <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Period
             </label>
             <div className="flex gap-1 flex-wrap">
@@ -145,8 +145,30 @@ export default function PeriodSelector({
               ))}
             </div>
           </div>
-          <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">
+          <div className="ml-auto flex items-center gap-1">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mr-1">
+              Trend
+            </span>
+            {trendOptions.map((mode) => (
+              <button
+                key={mode}
+                onClick={() => onTrendModeChange(mode)}
+                className={`px-2.5 py-1 text-[12px] font-medium rounded transition-colors ${
+                  trendMode === mode
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'bg-secondary text-secondary-foreground hover:bg-accent'
+                }`}
+              >
+                {mode === 'none' ? 'None' : mode}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Row 2: Quarter buttons (left) + Column dropdowns (right) */}
+        <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Quarter
             </label>
             <div className="flex gap-1">
@@ -165,32 +187,7 @@ export default function PeriodSelector({
               ))}
             </div>
           </div>
-        </div>
-
-        {/* Right side: Trend toggle on top, dropdowns below */}
-        <div className="ml-auto flex flex-col items-end gap-2">
-          {/* Trend toggle */}
-          <div className="flex items-center gap-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mr-1">
-              Trend
-            </span>
-            {trendOptions.map((mode) => (
-              <button
-                key={mode}
-                onClick={() => onTrendModeChange(mode)}
-                className={`px-2.5 py-1 text-[12px] font-medium rounded transition-colors ${
-                  trendMode === mode
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'bg-secondary text-secondary-foreground hover:bg-accent'
-                }`}
-              >
-                {mode === 'none' ? 'None' : mode}
-              </button>
-            ))}
-          </div>
-
-          {/* Column visibility dropdowns */}
-          <div className="flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-2">
             <MultiSelectDropdown
               label="Inputs"
               allItems={allInputCols}
