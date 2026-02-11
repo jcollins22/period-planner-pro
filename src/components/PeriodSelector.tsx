@@ -149,19 +149,22 @@ export default function PeriodSelector({
             <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mr-1">
               Trend
             </span>
-            {trendOptions.map((mode) => (
-              <button
-                key={mode}
-                onClick={() => onTrendModeChange(mode)}
-                className={`px-2.5 py-1 text-[12px] font-medium rounded transition-colors ${
-                  trendMode === mode
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'bg-secondary text-secondary-foreground hover:bg-accent'
-                }`}
-              >
-                {mode === 'none' ? 'None' : mode}
-              </button>
-            ))}
+            {trendOptions.map((mode) => {
+              const label = mode === 'none' ? 'None' : mode === 'QoQ' ? (isQuarter ? 'QoQ' : 'PoP') : mode;
+              return (
+                <button
+                  key={mode}
+                  onClick={() => onTrendModeChange(mode)}
+                  className={`px-2.5 py-1 text-[12px] font-medium rounded transition-colors ${
+                    trendMode === mode
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'bg-secondary text-secondary-foreground hover:bg-accent'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
