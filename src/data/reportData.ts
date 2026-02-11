@@ -100,7 +100,7 @@ function generateRow(channel: string, isQuarter: boolean): RowData {
   return base;
 }
 
-export function generateReportData(period: string): RowGroup[] {
+export function generateReportData(period: string, _trendMode?: string): RowGroup[] {
   const isQuarter = period.startsWith('Q');
 
   return [
