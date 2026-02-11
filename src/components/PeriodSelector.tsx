@@ -194,24 +194,20 @@ export default function PeriodSelector({
               onChange={onVisibleInputsChange}
               bgClass="bg-report-input-light"
             />
-            {isQuarter && (
-              <MultiSelectDropdown
-                label="Calculated"
-                allItems={allCalcCols}
-                selected={visibleCalcs}
-                onChange={onVisibleCalcsChange}
-                bgClass="bg-report-calc-light"
-              />
-            )}
-            {isQuarter && (
-              <MultiSelectDropdown
-                label="Outputs"
-                allItems={allOutputCols}
-                selected={visibleOutputs}
-                onChange={onVisibleOutputsChange}
-                bgClass="bg-report-output-light"
-              />
-            )}
+            <MultiSelectDropdown
+              label="Calculated"
+              allItems={allCalcCols}
+              selected={visibleCalcs}
+              onChange={onVisibleCalcsChange}
+              bgClass="bg-report-calc-light"
+            />
+            <MultiSelectDropdown
+              label="Outputs"
+              allItems={allOutputCols}
+              selected={visibleOutputs}
+              onChange={onVisibleOutputsChange}
+              bgClass="bg-report-output-light"
+            />
           </div>
         </div>
       </div>
