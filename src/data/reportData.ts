@@ -130,17 +130,9 @@ export function generateReportData(period: string): RowGroup[] {
       name: 'Experiential Marketing',
       collapsible: true,
       rows: [
-        generateRow('Sampling Program 1', isQuarter),
-        generateRow('Sampling Program 2', isQuarter),
-        generateRow('Essential Spend - Non Working', isQuarter),
-      ],
-    },
-    {
-      name: 'Samples At/Near Store',
-      collapsible: true,
-      rows: [
-        generateRow('Samples at Event', isQuarter),
+        generateRow('Samples At/Near Store', isQuarter),
         generateRow('Samples Away from Store', isQuarter),
+        generateRow('Samples at Event', isQuarter),
         generateRow('Essential Spend - Non Working', isQuarter),
       ],
     },
