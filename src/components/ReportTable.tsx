@@ -245,14 +245,12 @@ export default function ReportTable({ period, visibleInputs, visibleCalcs, visib
 
               return (
                 <React.Fragment key={`g-${group.name}`}>
+                  {/* Group header row with totals */}
                   <tr
                     className="bg-report-group text-report-header-fg cursor-pointer select-none hover:bg-report-group/90 transition-colors"
                     onClick={() => hasRows && group.collapsible && toggle(group.name)}
                   >
-                    <td
-                      className="report-channel-cell sticky left-0 z-10 bg-report-group font-bold text-[12px] border-r border-white/10"
-                      colSpan={1 + totalDataCols}
-                    >
+                    <td className="report-channel-cell sticky left-0 z-10 bg-report-group font-bold text-[12px] border-r border-white/10">
                       <div className="flex items-center gap-1.5">
                         {hasRows && group.collapsible && (
                           isCollapsed
@@ -262,6 +260,54 @@ export default function ReportTable({ period, visibleInputs, visibleCalcs, visib
                         {group.name}
                       </div>
                     </td>
+                    {filteredInputs.map((col) => {
+                      const v = inputKeyMap[col](group.totals);
+                      const trend = inputTrendMap[col](group.totals);
+                      return (
+                        <React.Fragment key={`gin-${col}`}>
+                          <td className="report-data-cell bg-report-group font-bold text-report-header-fg">
+                            {dollarInputs.has(col) ? formatDollar(v) : formatNum(v)}
+                          </td>
+                          {showTrend && (
+                            <td className={`report-data-cell bg-report-group font-semibold ${trend !== undefined && trend > 0 ? 'text-emerald-300' : trend !== undefined && trend < 0 ? 'text-red-300' : 'text-report-header-fg'}`}>
+                              {formatPct(trend)}
+                            </td>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                    {filteredCalcs.map((col) => {
+                      const v = calcKeyMap[col](group.totals);
+                      const trend = calcTrendMap[col](group.totals);
+                      return (
+                        <React.Fragment key={`gcalc-${col}`}>
+                          <td className="report-data-cell bg-report-group font-bold text-report-header-fg">
+                            {dollarCalcs.has(col) ? formatDollar(v) : formatNum(v)}
+                          </td>
+                          {showTrend && (
+                            <td className={`report-data-cell bg-report-group font-semibold ${trend !== undefined && trend > 0 ? 'text-emerald-300' : trend !== undefined && trend < 0 ? 'text-red-300' : 'text-report-header-fg'}`}>
+                              {formatPct(trend)}
+                            </td>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                    {filteredOutputs.map((col) => {
+                      const cur = outputCurrentMap[col](group.totals);
+                      const trend = outputTrendMap[col](group.totals);
+                      return (
+                        <React.Fragment key={`gout-${col}`}>
+                          <td className="report-data-cell bg-report-group font-bold text-report-header-fg">
+                            {pctOutputs.has(col) ? formatPct(cur) : dollarOutputs.has(col) ? formatDollar(cur) : formatNum(cur)}
+                          </td>
+                          {showTrend && (
+                            <td className={`report-data-cell bg-report-group font-semibold ${trend !== undefined && trend > 0 ? 'text-emerald-300' : trend !== undefined && trend < 0 ? 'text-red-300' : 'text-report-header-fg'}`}>
+                              {formatPct(trend)}
+                            </td>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
                   </tr>
                   {!isCollapsed && group.rows.map((row, idx) => renderDataRow(row, idx, true))}
                 </React.Fragment>

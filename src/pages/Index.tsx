@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import PeriodSelector, { allInputCols, allCalcCols, allOutputCols, type TrendMode } from '@/components/PeriodSelector';
 import ReportTable from '@/components/ReportTable';
+import ConsumptionTiles from '@/components/ConsumptionTiles';
 
 const Index = () => {
   const [period, setPeriod] = useState('Q1');
@@ -41,6 +42,7 @@ const Index = () => {
           trendMode={trendMode}
           onTrendModeChange={setTrendMode}
         />
+        <ConsumptionTiles period={period} trendMode={trendMode} />
         <ReportTable
           period={period}
           visibleInputs={visibleInputs}
