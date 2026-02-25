@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { generateReportData, type RowData } from '@/data/reportData';
+import { generateReportData, type RowData, type RowGroup } from '@/data/reportData';
 import type { TrendMode } from '@/components/PeriodSelector';
 
 interface ReportTableProps {
@@ -9,6 +9,7 @@ interface ReportTableProps {
   visibleCalcs: string[];
   visibleOutputs: string[];
   trendMode: TrendMode;
+  data?: RowGroup[];
 }
 
 const allInputCols = ['Planned Spend', 'Actual Spend', 'Working Spend', 'Impressions', 'Samples'];
@@ -98,9 +99,9 @@ const dollarCalcs = new Set(['NSV Number', 'MAC Number']);
 const pctOutputs = new Set(['% Contribution']);
 const dollarOutputs = new Set(['NSV $', 'GSV']);
 
-export default function ReportTable({ period, visibleInputs, visibleCalcs, visibleOutputs, trendMode }: ReportTableProps) {
+export default function ReportTable({ period, visibleInputs, visibleCalcs, visibleOutputs, trendMode, data: dataProp }: ReportTableProps) {
   const isQuarter = period.startsWith('Q');
-  const data = useMemo(() => generateReportData(period, trendMode), [period, trendMode]);
+  const data = useMemo(() => dataProp ?? generateReportData(period, trendMode), [dataProp, period, trendMode]);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   const showTrend = trendMode !== 'none';

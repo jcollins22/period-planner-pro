@@ -6,6 +6,7 @@ import type { TrendMode } from '@/components/PeriodSelector';
 interface ConsumptionTilesProps {
   period: string;
   trendMode: TrendMode;
+  data?: ConsumptionTileData[];
 }
 
 const fmtVal = (v: number, label: string) => {
@@ -105,8 +106,8 @@ function Tile({ tile }: { tile: ConsumptionTileData }) {
   );
 }
 
-export default function ConsumptionTiles({ period, trendMode }: ConsumptionTilesProps) {
-  const tiles = useMemo(() => generateConsumptionData(period, trendMode), [period, trendMode]);
+export default function ConsumptionTiles({ period, trendMode, data }: ConsumptionTilesProps) {
+  const tiles = useMemo(() => data ?? generateConsumptionData(period, trendMode), [data, period, trendMode]);
 
   return (
     <div className="flex gap-3 flex-wrap">
