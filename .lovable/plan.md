@@ -1,66 +1,78 @@
+## Plan: Add Consumption Metrics Table to Channel Metrics Page
 
-
-## Plan: Group Totals + Executive Consumption Tiles
-
-This plan covers two major additions to the main report page:
+Add a collapsible consumption metrics table connected to but below the existing channel metrics (Social, Shopper, Experiential) on the Period Breakdown page. This table reuses the same 5 consumption metrics and breakdowns from the main page but presents them in a period-based table format with hierarchical expand/collapse.
 
 ---
 
-### Part 1: Group Summary Totals on Collapsed Rows
+### Hierarchy Structure
 
-**What changes:** The group header rows (Base, Social, Experiential Marketing, Shopper Marketing) will display summed totals across all their child rows for every visible column. These totals remain visible even when the group is collapsed.
+**Sales** (collapsible)
 
-**Technical approach:**
+- Frozen (collapsible)
+  - Core
+  - Greek
+- FD (collapsible)
+  - Core
+  - Creme
 
-**`src/data/reportData.ts`**
-- Add a `totals` field to the `RowGroup` interface containing a single `RowData` object
-- In `generateReportData`, after generating each group's rows, compute the `totals` by summing all numeric fields across the child rows (spend, impressions, samples, outputs, etc.) and averaging trend percentages
+**Velocity** (same structure as Sales)
 
-**`src/components/ReportTable.tsx`**
-- Change the group header row from a single `colSpan` cell to render actual data cells (same as a data row) alongside the group name
-- The group name cell keeps the chevron toggle; the remaining cells show the summed totals using the same formatting logic (`formatDollar`, `formatNum`, `formatPct`)
-- Style the totals row with bold font on a slightly different background to distinguish it from child rows
+**HH Penetration** (collapsible)
 
----
+- Frozen
+- FD
 
-### Part 2: Executive Consumption Tiles
+**Total Repeat Rate** (same as HH Penetration)
 
-**What changes:** Five horizontal KPI tiles appear above the report table showing: Sales, Velocity, Household Penetration, Total Repeat Rate, and Dollars/Household. Each tile shows a total value with a trend percentage, plus a Frozen/FD split beneath in two different colors. Clicking Sales or Velocity expands a drill-down showing Frozen split into Core and Greek, and FD split into Core and Creme.
-
-**New files:**
-
-**`src/data/consumptionData.ts`**
-- Define an interface `ConsumptionTile` with fields: `total`, `trend`, `frozen`, `frozenTrend`, `fd`, `fdTrend`
-- For Sales and Velocity tiles, add sub-splits: `frozenCore`, `frozenGreek`, `fdCore`, `fdCreme` (each with value + trend)
-- Export a `generateConsumptionData(period, trendMode)` function that returns mock data for all 5 tiles, using seeded random values that change with period/trendMode
-
-**`src/components/ConsumptionTiles.tsx`**
-- New component receiving `period`, `trendMode` props
-- Renders 5 tiles in a horizontal flex row (`flex gap-3`), each as a compact card
-- Each tile shows:
-  - Title (e.g., "Sales") at the top in small bold text
-  - Total value prominently with trend percentage color-coded (emerald/red)
-  - Below the total: two small bars or chips for "Frozen" (blue tint) and "FD" (amber tint) with their values
-- Sales and Velocity tiles are clickable (cursor-pointer, subtle hover effect)
-- Clicking toggles an expanded state showing a small sub-breakdown beneath:
-  - Frozen row splits into "Core" and "Greek" values
-  - FD row splits into "Core" and "Creme" values
-- Uses existing Card component for consistent styling
-- Tiles are responsive -- on smaller screens they can wrap or shrink
-
-**`src/pages/Index.tsx`**
-- Import and render `ConsumptionTiles` between the `PeriodSelector` and `ReportTable`
-- Pass `period` and `trendMode` as props so tile data reacts to filter changes
+**$/Household** (same as HH Penetration)
 
 ---
 
-### Summary of files to create/modify
+### Data Layer: `src/data/consumptionData.ts`
 
-| File | Action |
-|------|--------|
-| `src/data/reportData.ts` | Add `totals` to `RowGroup`, compute sums in `generateReportData` |
-| `src/components/ReportTable.tsx` | Render group totals inline on header rows instead of single colSpan |
-| `src/data/consumptionData.ts` | New -- mock data generator for 5 consumption tiles |
-| `src/components/ConsumptionTiles.tsx` | New -- 5 horizontal KPI tiles with Frozen/FD split and drill-down |
-| `src/pages/Index.tsx` | Add `ConsumptionTiles` between selector and table |
+- Add a new function `generateConsumptionPeriodData(trendMode: string)` that returns period-level data (P1-P13) for each metric and its sub-rows
+- Reuse the existing seeded random utility and `ConsumptionTileData` interface pattern
+- Return a structure like: `Record<metricLabel, Record<rowName, Record<period, number>>>` where rowName includes "Total", "Frozen", "FD", "Frozen Core", "Frozen Greek", "FD Core", "FD Creme"
+- Data should vary based on `trendMode` to stay consistent with the rest of the app
 
+### New Component: `src/components/ConsumptionMetricsTable.tsx`
+
+- Renders a table with the same period column structure as `ChannelMetricsTable` (P1-P13 under Q1-Q4 headers)
+- Left columns: Metric name with indent levels for hierarchy
+- Each top-level metric row (Sales, Velocity, etc.) has a chevron toggle to expand/collapse
+- For Sales and Velocity: expanding shows Frozen and FD rows, each of which is also expandable to show their sub-splits (Core/Greek or Core/Creme)
+- For HH Penetration, Total Repeat Rate, $/Household: expanding shows just Frozen and FD
+- Parent rows styled with bold text and subtle background; child rows indented
+- Formatting follows the same rules as existing consumption tiles (dollar formatting for Sales, percentage for HH Penetration/Repeat Rate, dollar for $/Household, plain number for Velocity)
+
+### Integration: `src/pages/ChannelMetrics.tsx`
+
+- Import and render `ConsumptionMetricsTable` below `ChannelMetricsTable`
+- Add a section heading like "Consumption Metrics" above it
+- No additional filters needed -- the table uses its own seeded data
+
+---
+
+### Technical Details
+
+**Files to create/modify:**
+
+
+| File                                         | Action                                                    |
+| -------------------------------------------- | --------------------------------------------------------- |
+| `src/data/consumptionData.ts`                | Add `generateConsumptionPeriodData()` function            |
+| `src/components/ConsumptionMetricsTable.tsx` | New -- hierarchical collapsible table with P1-P13 columns |
+| `src/pages/ChannelMetrics.tsx`               | Import and render new table below existing one            |
+
+
+**Collapse state management:**
+
+- `useState` records tracking which metrics are expanded and which sub-levels (Frozen/FD) are expanded
+- Structure: `expandedMetrics: Set<string>` for top-level, `expandedSubs: Set<string>` for Frozen/FD within Sales/Velocity
+
+**Styling:**
+
+- Match existing table styles (report-header, report-data-cell classes)
+- Parent rows: bold, slightly darker background
+- Sub-rows: indented with `pl-6`, sub-sub-rows with `pl-10`
+- Chevron icons rotate on expand (ChevronRight / ChevronDown from lucide-react)
