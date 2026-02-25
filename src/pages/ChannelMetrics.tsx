@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import ChannelMetricsTable from '@/components/ChannelMetricsTable';
-import ConsumptionMetricsTable from '@/components/ConsumptionMetricsTable';
 
 const ChannelMetrics = () => {
   return (
@@ -23,13 +22,6 @@ const ChannelMetrics = () => {
           </Link>
         </div>
         <ChannelMetricsTable />
-
-        <div className="space-y-3">
-          <h2 className="text-lg font-bold text-foreground tracking-tight">
-            Consumption Metrics
-          </h2>
-          <ConsumptionMetricsTable />
-        </div>
       </div>
     </div>
   );
