@@ -45,6 +45,7 @@ export interface RowGroup {
   name: string;
   collapsible: boolean;
   rows: RowData[];
+  totals: RowData;
 }
 
 function randomVal(min: number, max: number, decimals = 0): number {
@@ -100,10 +101,62 @@ function generateRow(channel: string, isQuarter: boolean): RowData {
   return base;
 }
 
+function computeTotals(rows: RowData[], isQuarter: boolean): RowData {
+  const sum = (fn: (r: RowData) => number | undefined) =>
+    rows.reduce((acc, r) => acc + (fn(r) ?? 0), 0);
+  const avg = (fn: (r: RowData) => number | undefined) => {
+    const vals = rows.map(fn).filter((v): v is number => v !== undefined);
+    return vals.length ? Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1)) : undefined;
+  };
+
+  const totals: RowData = {
+    channel: 'Total',
+    plannedSpend: sum((r) => r.plannedSpend),
+    plannedSpendTrend: avg((r) => r.plannedSpendTrend),
+    actualSpend: sum((r) => r.actualSpend),
+    actualSpendTrend: avg((r) => r.actualSpendTrend),
+    workingSpend: sum((r) => r.workingSpend),
+    workingSpendTrend: avg((r) => r.workingSpendTrend),
+    impressions: sum((r) => r.impressions),
+    impressionsTrend: avg((r) => r.impressionsTrend),
+    samples: sum((r) => r.samples),
+    samplesTrend: avg((r) => r.samplesTrend),
+    cpmCpp: avg((r) => r.cpmCpp),
+    cpmCppTrend: avg((r) => r.cpmCppTrend),
+    coverageFactor: avg((r) => r.coverageFactor),
+    coverageFactorTrend: avg((r) => r.coverageFactorTrend),
+    nsvNumber: sum((r) => r.nsvNumber),
+    nsvNumberTrend: avg((r) => r.nsvNumberTrend),
+    macNumber: sum((r) => r.macNumber),
+    macNumberTrend: avg((r) => r.macNumberTrend),
+  };
+
+  if (isQuarter) {
+    totals.pctContribCurrent = sum((r) => r.pctContribCurrent);
+    totals.pctContribQoQ = avg((r) => r.pctContribQoQ);
+    totals.volumeCurrent = sum((r) => r.volumeCurrent);
+    totals.volumeQoQ = avg((r) => r.volumeQoQ);
+    totals.scaledVolCurrent = sum((r) => r.scaledVolCurrent);
+    totals.scaledVolQoQ = avg((r) => r.scaledVolQoQ);
+    totals.nsvDollarCurrent = sum((r) => r.nsvDollarCurrent);
+    totals.nsvDollarQoQ = avg((r) => r.nsvDollarQoQ);
+    totals.gsvCurrent = sum((r) => r.gsvCurrent);
+    totals.gsvQoQ = avg((r) => r.gsvQoQ);
+    totals.nsvRoiCurrent = avg((r) => r.nsvRoiCurrent);
+    totals.nsvRoiQoQ = avg((r) => r.nsvRoiQoQ);
+    totals.macRoiCurrent = avg((r) => r.macRoiCurrent);
+    totals.macRoiQoQ = avg((r) => r.macRoiQoQ);
+    totals.effectivenessCurrent = avg((r) => r.effectivenessCurrent);
+    totals.effectivenessQoQ = avg((r) => r.effectivenessQoQ);
+  }
+
+  return totals;
+}
+
 export function generateReportData(period: string, _trendMode?: string): RowGroup[] {
   const isQuarter = period.startsWith('Q');
 
-  return [
+  const groups = [
     {
       name: 'Base',
       collapsible: true,
@@ -153,4 +206,9 @@ export function generateReportData(period: string, _trendMode?: string): RowGrou
       ],
     },
   ];
+
+  return groups.map((g) => ({
+    ...g,
+    totals: computeTotals(g.rows, isQuarter),
+  }));
 }
