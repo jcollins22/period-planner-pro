@@ -56,10 +56,15 @@ const consumptionMetrics: ConsumptionMetricDef[] = [
   { label: '$/Household', drillable: false },
 ];
 
-export default function ChannelMetricsTable() {
+interface ChannelMetricsTableProps {
+  channelData?: Record<string, Record<string, Record<string, number>>>;
+  consumptionPeriodData?: Record<string, Record<string, Record<string, number>>>;
+}
+
+export default function ChannelMetricsTable({ channelData, consumptionPeriodData }: ChannelMetricsTableProps = {}) {
   const [selectedMetric, setSelectedMetric] = useState<OutputMetric>('NSV ROI');
-  const data = useMemo(() => generateChannelMetricsData(selectedMetric), [selectedMetric]);
-  const consumptionData = useMemo(() => generateConsumptionPeriodData('default'), []);
+  const data = useMemo(() => channelData ?? generateChannelMetricsData(selectedMetric), [channelData, selectedMetric]);
+  const consumptionData = useMemo(() => consumptionPeriodData ?? generateConsumptionPeriodData('default'), [consumptionPeriodData]);
 
   const [expandedMetrics, setExpandedMetrics] = useState<Set<string>>(new Set());
   const [expandedSubs, setExpandedSubs] = useState<Set<string>>(new Set());
