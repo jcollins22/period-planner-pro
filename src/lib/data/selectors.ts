@@ -1,17 +1,44 @@
-import type { ParsedWorkbook, QuarterRow } from '@/lib/excel/excelSchema';
+import type { ParsedWorkbook, ChannelRow } from '@/lib/excel/excelSchema';
 import type { RowData, RowGroup } from '@/data/reportData';
 import { generateReportData } from '@/data/reportData';
 import type { ConsumptionTileData } from '@/data/consumptionData';
 import { generateConsumptionData, generateConsumptionPeriodData, type ConsumptionPeriodData } from '@/data/consumptionData';
 import type { ChannelMetricsMap, OutputMetric } from '@/data/channelMetricsData';
-import { generateChannelMetricsData, channelGroups } from '@/data/channelMetricsData';
+import { generateChannelMetricsData } from '@/data/channelMetricsData';
 
-// ── Mapping: Excel column names → RowData field keys ──
+// ── Helpers ──
 
-// The Excel Q sheets have columns like "Planned Spend__Q" and "Planned Spend__QoQ"
-// We need to map these to RowData fields like plannedSpend and plannedSpendTrend
+const quarterPeriodMap: Record<string, string[]> = {
+  Q1: ['P1', 'P2', 'P3'],
+  Q2: ['P4', 'P5', 'P6'],
+  Q3: ['P7', 'P8', 'P9'],
+  Q4: ['P10', 'P11', 'P12'],
+};
 
-const excelToRowDataMap: Record<string, { value: keyof RowData; trend: keyof RowData }> = {
+const quarterOrder = ['Q1', 'Q2', 'Q3', 'Q4'];
+
+function computeTrend(current: number, previous: number): number {
+  if (previous === 0) return 0;
+  return Number(((current - previous) / Math.abs(previous) * 100).toFixed(1));
+}
+
+function sumPeriods(row: ChannelRow, periods: string[]): number {
+  return periods.reduce((acc, p) => acc + (typeof row[p] === 'number' ? row[p] as number : 0), 0);
+}
+
+function getPreviousQuarter(q: string): string | null {
+  const idx = quarterOrder.indexOf(q);
+  return idx > 0 ? quarterOrder[idx - 1] : null;
+}
+
+function getPreviousPeriod(p: string): string | null {
+  const num = parseInt(p.slice(1));
+  return num > 1 ? `P${num - 1}` : null;
+}
+
+// ── Metric name → RowData field mapping ──
+
+const metricFieldMap: Record<string, { value: keyof RowData; trend: keyof RowData }> = {
   'Planned Spend': { value: 'plannedSpend', trend: 'plannedSpendTrend' },
   'Actual Spend': { value: 'actualSpend', trend: 'actualSpendTrend' },
   'Working Spend': { value: 'workingSpend', trend: 'workingSpendTrend' },
@@ -31,43 +58,7 @@ const excelToRowDataMap: Record<string, { value: keyof RowData; trend: keyof Row
   'Effectiveness': { value: 'effectivenessCurrent', trend: 'effectivenessQoQ' },
 };
 
-// Channel → group assignment
-const channelGroupMap: Record<string, string> = {};
-const defaultGroups: Record<string, string[]> = {
-  'Base': ['Other Base Features', 'Competitor Average Price', 'Competitor TDP', 'Inflation', 'Seasonality', 'Temperature', 'Average Price', 'Change of TDP', 'Trade (Feature & Display)', 'Promo'],
-  'Social': ['Owned + Paid', 'In-house Influencers', 'PR Box', 'Adfairy', 'Kale', 'New Social Channel', 'Essential Spend - Non Working'],
-  'Experiential Marketing': ['Samples At/Near Store', 'Samples Away from Store', 'Samples at Event'],
-  'Shopper Marketing': ['Shopper Tactic 1', 'Shopper Tactic 2', 'Shopper Tactic 3'],
-};
-
-for (const [group, channels] of Object.entries(defaultGroups)) {
-  for (const ch of channels) channelGroupMap[ch] = group;
-}
-
-function quarterRowToRowData(row: QuarterRow): RowData {
-  const rd: RowData = { channel: row.channel };
-
-  // Extract unique metric names from keys like "Metric Name__Q"
-  for (const key of Object.keys(row)) {
-    if (key === 'channel') continue;
-    const parts = key.split('__');
-    if (parts.length !== 2) continue;
-    const [metricName, subHeader] = parts;
-    const mapping = excelToRowDataMap[metricName];
-    if (!mapping) continue;
-
-    const val = row[key];
-    const numVal = typeof val === 'number' ? val : Number(val) || 0;
-
-    if (subHeader === 'Q') {
-      (rd as any)[mapping.value] = numVal;
-    } else if (subHeader === 'QoQ') {
-      (rd as any)[mapping.trend] = numVal;
-    }
-  }
-
-  return rd;
-}
+// ── Report Data Selector ──
 
 function computeTotals(rows: RowData[]): RowData {
   const sum = (fn: (r: RowData) => number | undefined) =>
@@ -99,50 +90,73 @@ function computeTotals(rows: RowData[]): RowData {
   };
 }
 
-// ── Report Data Selector ──
-
 export function selectReportData(workbook: ParsedWorkbook | null, period: string, trendMode: string): RowGroup[] {
-  if (!workbook) return generateReportData(period, trendMode);
+  if (!workbook || workbook.channels.length === 0) return generateReportData(period, trendMode);
 
-  const qKey = period.startsWith('Q') ? period.toLowerCase() as 'q1' | 'q2' | 'q3' | 'q4' : null;
+  const isQuarter = period.startsWith('Q');
 
-  // For period selections (P1-P13), map to the corresponding quarter
-  let rows: QuarterRow[];
-  if (qKey) {
-    rows = workbook[qKey];
+  // Determine current and previous periods for value extraction and trend computation
+  let currentPeriods: string[];
+  let previousPeriods: string[] | null;
+
+  if (isQuarter) {
+    currentPeriods = quarterPeriodMap[period] || [];
+    const prevQ = getPreviousQuarter(period);
+    previousPeriods = prevQ ? quarterPeriodMap[prevQ] : null;
   } else {
-    // For Px periods, find which quarter it belongs to
-    const pNum = parseInt(period.slice(1));
-    const q = pNum <= 3 ? 'q1' : pNum <= 6 ? 'q2' : pNum <= 9 ? 'q3' : pNum <= 12 ? 'q4' : 'q4';
-    rows = workbook[q];
+    currentPeriods = [period];
+    const prevP = getPreviousPeriod(period);
+    previousPeriods = prevP ? [prevP] : null;
   }
 
-  if (!rows || rows.length === 0) return generateReportData(period, trendMode);
+  // Group channel rows by channel name, collecting all metric rows per channel
+  const channelMetrics: Record<string, { group: string; metrics: Record<string, ChannelRow> }> = {};
 
-  // Group channels
+  for (const row of workbook.channels) {
+    const key = row.channel;
+    if (!channelMetrics[key]) {
+      channelMetrics[key] = { group: row.group, metrics: {} };
+    }
+    channelMetrics[key].metrics[row.metric] = row;
+  }
+
+  // Build RowData per channel
   const groupedRows: Record<string, RowData[]> = {};
-  for (const row of rows) {
-    const rd = quarterRowToRowData(row);
-    const groupName = channelGroupMap[rd.channel] || 'Other';
-    if (!groupedRows[groupName]) groupedRows[groupName] = [];
-    groupedRows[groupName].push(rd);
+
+  for (const [channelName, { group, metrics }] of Object.entries(channelMetrics)) {
+    const rd: RowData = { channel: channelName };
+
+    for (const [metricName, mapping] of Object.entries(metricFieldMap)) {
+      const metricRow = metrics[metricName];
+      if (!metricRow) continue;
+
+      const currentVal = currentPeriods.reduce((acc, p) => acc + (typeof metricRow[p] === 'number' ? metricRow[p] as number : 0), 0);
+      let trendVal = 0;
+
+      if (previousPeriods) {
+        const prevVal = previousPeriods.reduce((acc, p) => acc + (typeof metricRow[p] === 'number' ? metricRow[p] as number : 0), 0);
+        trendVal = computeTrend(currentVal, prevVal);
+      }
+
+      (rd as any)[mapping.value] = currentVal;
+      (rd as any)[mapping.trend] = trendVal;
+    }
+
+    if (!groupedRows[group]) groupedRows[group] = [];
+    groupedRows[group].push(rd);
   }
 
+  // Build result in a sensible order
   const groupOrder = ['Base', 'Social', 'Experiential Marketing', 'Shopper Marketing'];
   const result: RowGroup[] = [];
 
   for (const name of groupOrder) {
-    const gRows = groupedRows[name] || [];
-    if (gRows.length === 0) continue;
-    result.push({
-      name,
-      collapsible: true,
-      rows: gRows,
-      totals: computeTotals(gRows),
-    });
+    const gRows = groupedRows[name];
+    if (!gRows || gRows.length === 0) continue;
+    result.push({ name, collapsible: true, rows: gRows, totals: computeTotals(gRows) });
   }
 
-  // Add any remaining groups not in the order
+  // Add any remaining groups not in the default order
   for (const [name, gRows] of Object.entries(groupedRows)) {
     if (!groupOrder.includes(name)) {
       result.push({ name, collapsible: true, rows: gRows, totals: computeTotals(gRows) });
@@ -154,17 +168,30 @@ export function selectReportData(workbook: ParsedWorkbook | null, period: string
 
 // ── Consumption Tiles Selector ──
 
-const quarterPeriodMap: Record<string, string[]> = {
-  Q1: ['P1', 'P2', 'P3'],
-  Q2: ['P4', 'P5', 'P6'],
-  Q3: ['P7', 'P8', 'P9'],
-  Q4: ['P10', 'P11', 'P12'],
-};
-
 export function selectConsumptionTiles(workbook: ParsedWorkbook | null, period: string, trendMode: string): ConsumptionTileData[] {
   if (!workbook || workbook.consumption.length === 0) return generateConsumptionData(period, trendMode);
 
-  const periodsToSum = period.startsWith('Q') ? (quarterPeriodMap[period] || [period]) : [period];
+  const isQuarter = period.startsWith('Q');
+  const currentPeriods = isQuarter ? (quarterPeriodMap[period] || [period]) : [period];
+
+  let previousPeriods: string[] | null;
+  if (isQuarter) {
+    const prevQ = getPreviousQuarter(period);
+    previousPeriods = prevQ ? quarterPeriodMap[prevQ] : null;
+  } else {
+    const prevP = getPreviousPeriod(period);
+    previousPeriods = prevP ? [prevP] : null;
+  }
+
+  const sumP = (row: any, periods: string[]) =>
+    periods.reduce((acc: number, p: string) => acc + (typeof row[p] === 'number' ? row[p] as number : 0), 0);
+
+  const trendFor = (row: any) => {
+    const cur = sumP(row, currentPeriods);
+    if (!previousPeriods) return 0;
+    const prev = sumP(row, previousPeriods);
+    return computeTrend(cur, prev);
+  };
 
   // Group rows by metric
   const byMetric: Record<string, typeof workbook.consumption> = {};
@@ -181,25 +208,18 @@ export function selectConsumptionTiles(workbook: ParsedWorkbook | null, period: 
     const rows = byMetric[label] || [];
     const drillable = drillableMetrics.has(label);
 
-    const sumPeriods = (r: typeof rows[0]) =>
-      periodsToSum.reduce((acc, p) => acc + (typeof r[p] === 'number' ? r[p] as number : 0), 0);
-
     const totalRow = rows.find(r => r.level1 === 'Total');
     const frozenRow = rows.find(r => r.level1 === 'Frozen' && !r.level2);
     const fdRow = rows.find(r => r.level1 === 'FD' && !r.level2);
 
-    const total = totalRow ? sumPeriods(totalRow) : 0;
-    const frozen = frozenRow ? sumPeriods(frozenRow) : 0;
-    const fd = fdRow ? sumPeriods(fdRow) : 0;
-
     const tile: ConsumptionTileData = {
       label,
-      total,
-      trend: 0,
-      frozen,
-      frozenTrend: 0,
-      fd,
-      fdTrend: 0,
+      total: totalRow ? sumP(totalRow, currentPeriods) : 0,
+      trend: totalRow ? trendFor(totalRow) : 0,
+      frozen: frozenRow ? sumP(frozenRow, currentPeriods) : 0,
+      frozenTrend: frozenRow ? trendFor(frozenRow) : 0,
+      fd: fdRow ? sumP(fdRow, currentPeriods) : 0,
+      fdTrend: fdRow ? trendFor(fdRow) : 0,
       drillable,
     };
 
@@ -209,10 +229,10 @@ export function selectConsumptionTiles(workbook: ParsedWorkbook | null, period: 
       const fdCoreRow = rows.find(r => r.level1 === 'FD' && r.level2 === 'Core');
       const fdCremeRow = rows.find(r => r.level1 === 'FD' && r.level2 === 'Creme');
 
-      tile.frozenCore = { value: frozenCoreRow ? sumPeriods(frozenCoreRow) : 0, trend: 0 };
-      tile.frozenGreek = { value: frozenGreekRow ? sumPeriods(frozenGreekRow) : 0, trend: 0 };
-      tile.fdCore = { value: fdCoreRow ? sumPeriods(fdCoreRow) : 0, trend: 0 };
-      tile.fdCreme = { value: fdCremeRow ? sumPeriods(fdCremeRow) : 0, trend: 0 };
+      tile.frozenCore = { value: frozenCoreRow ? sumP(frozenCoreRow, currentPeriods) : 0, trend: frozenCoreRow ? trendFor(frozenCoreRow) : 0 };
+      tile.frozenGreek = { value: frozenGreekRow ? sumP(frozenGreekRow, currentPeriods) : 0, trend: frozenGreekRow ? trendFor(frozenGreekRow) : 0 };
+      tile.fdCore = { value: fdCoreRow ? sumP(fdCoreRow, currentPeriods) : 0, trend: fdCoreRow ? trendFor(fdCoreRow) : 0 };
+      tile.fdCreme = { value: fdCremeRow ? sumP(fdCremeRow, currentPeriods) : 0, trend: fdCremeRow ? trendFor(fdCremeRow) : 0 };
     }
 
     tiles.push(tile);
@@ -232,7 +252,6 @@ export function selectConsumptionPeriodData(workbook: ParsedWorkbook | null): Co
     const metric = row.metric;
     if (!result[metric]) result[metric] = {};
 
-    // Determine row name from level1/level2
     let rowName: string;
     if (row.level1 === 'Total') {
       rowName = 'Total';
@@ -261,16 +280,11 @@ export function selectChannelMetricsData(workbook: ParsedWorkbook | null, output
 
   const result: ChannelMetricsMap = {};
 
-  // Map period rows into channel metrics structure
-  // The existing structure is: channelGroupName -> metricName -> periodKey -> value
-  // Period sheet has: channel (group name), metric, P1..P13
-
   for (const row of workbook.period) {
     const groupName = row.channel;
     if (!result[groupName]) result[groupName] = {};
 
     let metricKey = row.metric;
-    // If metric matches the selected output metric, store as 'Output Metric'
     if (metricKey === outputMetric) metricKey = 'Output Metric';
 
     if (!result[groupName][metricKey]) result[groupName][metricKey] = {};
