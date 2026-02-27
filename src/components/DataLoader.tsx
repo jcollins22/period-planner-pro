@@ -32,7 +32,7 @@ export default function DataLoader() {
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded bg-secondary text-secondary-foreground hover:bg-accent transition-colors border border-border"
         >
           <Upload className="w-3.5 h-3.5" />
-          Load Excel (.xlsx)
+          Load Data (.xlsx)
         </button>
       )}
 
