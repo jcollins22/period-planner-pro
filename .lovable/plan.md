@@ -1,37 +1,35 @@
 
 
-## Plan: Fix Template to Match Exact App Schema + Rename "Actual Spend"
+## Plan: Simplify Channel Structure
 
-### Two changes
+### Changes
 
-**1. Rename "Actual Spend" to "Essential Spend (non working)" everywhere**
+**1. Remove sub-channels from Experiential Marketing and Shopper Marketing**
 
-Files affected:
-- `src/components/ReportTable.tsx` -- update `allInputCols`, `inputKeyMap`, `inputTrendMap`, `dollarInputs`
-- `src/data/reportData.ts` -- update `RowData` field names (`actualSpend` -> `essentialSpend`, `actualSpendTrend` -> `essentialSpendTrend`) and all references in `generateRow`, `computeTotals`
-- `src/lib/excel/templateDownload.ts` -- use new metric name in template
-- `src/lib/excel/loadExcel.ts` -- if the parser maps by metric name, update there too
+Both groups will have no sub-rows -- they will appear as single-line groups with only totals (no expandable children).
 
-**2. Expand the Channels sheet in the template to include ALL 24 channels across all 4 groups**
+**2. Remove "Essential Spend - Non Working" and "New Social Channel" from Social**
 
-Update `src/lib/excel/templateDownload.ts` to generate rows for every group/channel/metric combination:
+Social will keep 5 sub-channels: Owned + Paid, In-house Influencers, PR Box, Adfairy, Kale.
 
-| Group | Channels (exact names from app) |
-|-------|-------------------------------|
-| Base | Other Base Features, Competitor Average Price, Competitor TDP, Inflation, Seasonality, Temperature, Average Price, Change of TDP, Trade (Feature & Display), Promo |
-| Social | Owned + Paid, In-house Influencers, PR Box, Adfairy, Kale, New Social Channel, Essential Spend - Non Working |
-| Experiential Marketing | Samples At/Near Store, Samples Away from Store, Samples at Event, Essential Spend - Non Working |
-| Shopper Marketing | Shopper Tactic 1, Shopper Tactic 2, Shopper Tactic 3 |
+### Files to update
 
-17 metrics per channel (with "Essential Spend (non working)" replacing "Actual Spend"):
-Planned Spend, Essential Spend (non working), Working Spend, Impressions, Samples, CPM & CPP, Coverage Factor, NSV Number, MAC Number, % Contribution, Volume, Scaled Volume, NSV $, GSV, NSV ROI, MAC ROI, Effectiveness
+**`src/data/reportData.ts`** (report data generator)
+- Social: remove `generateRow('New Social Channel', ...)` and `generateRow('Essential Spend - Non Working', ...)`
+- Experiential Marketing: remove all 4 individual `generateRow(...)` calls, set `rows: []` and `collapsible: false`
+- Shopper Marketing: remove all 3 individual `generateRow(...)` calls, set `rows: []` and `collapsible: false`
 
-Total: 24 channels x 17 metrics = 408 data rows + 1 header row.
+**`src/lib/excel/templateDownload.ts`** (template downloader)
+- Social channels: remove "New Social Channel" and "Essential Spend - Non Working"
+- Experiential Marketing: remove all sub-channels (empty array)
+- Shopper Marketing: remove all sub-channels (empty array)
+- This reduces template from 408 rows to: (10 + 5) channels x 17 metrics = 255 rows, plus Experiential and Shopper as group-level-only entries
 
-### Technical approach
+**`src/components/ReportTable.tsx`** (if it references these channel names directly -- will verify during implementation)
 
-- Define the channel structure as a constant array in `templateDownload.ts`
-- Loop through groups, channels, and metrics to programmatically generate all rows with sample values
-- Use a helper function that varies sample values slightly per channel so the data is distinguishable
-- Consumption and Period sheets remain unchanged
+### Result
+- **Base**: 10 sub-channels (unchanged)
+- **Social**: 5 sub-channels (Owned + Paid, In-house Influencers, PR Box, Adfairy, Kale)
+- **Experiential Marketing**: no sub-channels, just a group-level row
+- **Shopper Marketing**: no sub-channels, just a group-level row
 
