@@ -38,7 +38,7 @@ const formatOutputVal = (outputMetric: OutputMetric, v: number) => {
 const formatConsumptionVal = (metric: string, v: number): string => {
   if (metric === 'Sales') return '$' + v.toLocaleString('en-US', { maximumFractionDigits: 0 });
   if (metric === 'Velocity') return v.toLocaleString('en-US', { maximumFractionDigits: 0 });
-  if (metric === 'HH Penetration' || metric === 'Total Repeat Rate') return v.toFixed(1) + '%';
+  if (metric === 'HH Penetration' || metric === 'Repeat Rate') return v.toFixed(1) + '%';
   if (metric === '$/Household') return '$' + v.toFixed(2);
   return String(v);
 };
@@ -52,7 +52,7 @@ const consumptionMetrics: ConsumptionMetricDef[] = [
   { label: 'Sales', drillable: true },
   { label: 'Velocity', drillable: true },
   { label: 'HH Penetration', drillable: false },
-  { label: 'Total Repeat Rate', drillable: false },
+  { label: 'Repeat Rate', drillable: false },
   { label: '$/Household', drillable: false },
 ];
 
