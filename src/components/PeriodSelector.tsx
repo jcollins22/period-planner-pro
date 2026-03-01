@@ -17,7 +17,7 @@ interface PeriodSelectorProps {
   onTrendModeChange: (mode: TrendMode) => void;
 }
 
-const allInputCols = ['Planned Spend', 'Actual Spend', 'Working Spend', 'Impressions', 'Samples'];
+const allInputCols = ['Planned Spend', 'Essential Spend (non working)', 'Working Spend', 'Impressions', 'Samples'];
 const allCalcCols = ['CPM & CPP', 'Coverage Factor', 'NSV Number', 'MAC Number'];
 const allOutputCols = ['% Contribution', 'Volume', 'Scaled Volume', 'NSV $', 'GSV', 'NSV ROI', 'MAC ROI', 'Effectiveness'];
 

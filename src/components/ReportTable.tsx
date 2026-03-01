@@ -12,7 +12,7 @@ interface ReportTableProps {
   data?: RowGroup[];
 }
 
-const allInputCols = ['Planned Spend', 'Actual Spend', 'Working Spend', 'Impressions', 'Samples'];
+const allInputCols = ['Planned Spend', 'Essential Spend (non working)', 'Working Spend', 'Impressions', 'Samples'];
 const allCalcCols = ['CPM & CPP', 'Coverage Factor', 'NSV Number', 'MAC Number'];
 const allOutputPairs = [
   '% Contribution', 'Volume', 'Scaled Volume', 'NSV $', 'GSV', 'NSV ROI', 'MAC ROI', 'Effectiveness',
@@ -44,7 +44,7 @@ const trendColor = (v?: number) => {
 // Map input column names to RowData keys
 const inputKeyMap: Record<string, (r: RowData) => number | undefined> = {
   'Planned Spend': (r) => r.plannedSpend,
-  'Actual Spend': (r) => r.actualSpend,
+  'Essential Spend (non working)': (r) => r.essentialSpend,
   'Working Spend': (r) => r.workingSpend,
   'Impressions': (r) => r.impressions,
   'Samples': (r) => r.samples,
@@ -52,7 +52,7 @@ const inputKeyMap: Record<string, (r: RowData) => number | undefined> = {
 
 const inputTrendMap: Record<string, (r: RowData) => number | undefined> = {
   'Planned Spend': (r) => r.plannedSpendTrend,
-  'Actual Spend': (r) => r.actualSpendTrend,
+  'Essential Spend (non working)': (r) => r.essentialSpendTrend,
   'Working Spend': (r) => r.workingSpendTrend,
   'Impressions': (r) => r.impressionsTrend,
   'Samples': (r) => r.samplesTrend,
@@ -94,7 +94,7 @@ const outputTrendMap: Record<string, (r: RowData) => number | undefined> = {
   'Effectiveness': (r) => r.effectivenessQoQ,
 };
 
-const dollarInputs = new Set(['Planned Spend', 'Actual Spend', 'Working Spend']);
+const dollarInputs = new Set(['Planned Spend', 'Essential Spend (non working)', 'Working Spend']);
 const dollarCalcs = new Set(['NSV Number', 'MAC Number']);
 const pctOutputs = new Set(['% Contribution']);
 const dollarOutputs = new Set(['NSV $', 'GSV']);

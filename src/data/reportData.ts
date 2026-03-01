@@ -7,8 +7,8 @@ export interface RowData {
   channel: string;
   plannedSpend?: number;
   plannedSpendTrend?: number;
-  actualSpend?: number;
-  actualSpendTrend?: number;
+  essentialSpend?: number;
+  essentialSpendTrend?: number;
   workingSpend?: number;
   workingSpendTrend?: number;
   impressions?: number;
@@ -58,8 +58,8 @@ function generateRow(channel: string, isQuarter: boolean): RowData {
     channel,
     plannedSpend: randomVal(5000, 200000),
     plannedSpendTrend: randomVal(-15, 15, 1),
-    actualSpend: randomVal(5000, 200000),
-    actualSpendTrend: randomVal(-15, 15, 1),
+    essentialSpend: randomVal(5000, 200000),
+    essentialSpendTrend: randomVal(-15, 15, 1),
     workingSpend: randomVal(3000, 150000),
     workingSpendTrend: randomVal(-15, 15, 1),
     impressions: randomVal(100000, 5000000),
@@ -113,8 +113,8 @@ function computeTotals(rows: RowData[], isQuarter: boolean): RowData {
     channel: 'Total',
     plannedSpend: sum((r) => r.plannedSpend),
     plannedSpendTrend: avg((r) => r.plannedSpendTrend),
-    actualSpend: sum((r) => r.actualSpend),
-    actualSpendTrend: avg((r) => r.actualSpendTrend),
+    essentialSpend: sum((r) => r.essentialSpend),
+    essentialSpendTrend: avg((r) => r.essentialSpendTrend),
     workingSpend: sum((r) => r.workingSpend),
     workingSpendTrend: avg((r) => r.workingSpendTrend),
     impressions: sum((r) => r.impressions),

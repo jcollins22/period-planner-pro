@@ -2,33 +2,63 @@ import * as XLSX from 'xlsx';
 
 const PERIOD_HEADERS = ['P1','P2','P3','P4','P5','P6','P7','P8','P9','P10','P11','P12','P13'];
 
+const METRICS = [
+  'Planned Spend', 'Essential Spend (non working)', 'Working Spend', 'Impressions', 'Samples',
+  'CPM & CPP', 'Coverage Factor', 'NSV Number', 'MAC Number',
+  '% Contribution', 'Volume', 'Scaled Volume', 'NSV $', 'GSV', 'NSV ROI', 'MAC ROI', 'Effectiveness',
+];
+
+const CHANNEL_GROUPS: { group: string; channels: string[] }[] = [
+  {
+    group: 'Base',
+    channels: [
+      'Other Base Features', 'Competitor Average Price', 'Competitor TDP',
+      'Inflation', 'Seasonality', 'Temperature', 'Average Price',
+      'Change of TDP', 'Trade (Feature & Display)', 'Promo',
+    ],
+  },
+  {
+    group: 'Social',
+    channels: [
+      'Owned + Paid', 'In-house Influencers', 'PR Box', 'Adfairy',
+      'Kale', 'New Social Channel', 'Essential Spend - Non Working',
+    ],
+  },
+  {
+    group: 'Experiential Marketing',
+    channels: [
+      'Samples At/Near Store', 'Samples Away from Store',
+      'Samples at Event', 'Essential Spend - Non Working',
+    ],
+  },
+  {
+    group: 'Shopper Marketing',
+    channels: ['Shopper Tactic 1', 'Shopper Tactic 2', 'Shopper Tactic 3'],
+  },
+];
+
+/** Generate sample values that vary slightly per channel/metric so data is distinguishable */
+function sampleValues(groupIdx: number, channelIdx: number, metricIdx: number): number[] {
+  const seed = (groupIdx + 1) * 100 + (channelIdx + 1) * 10 + metricIdx;
+  const base = 1000 + seed * 3;
+  return Array.from({ length: 13 }, (_, i) => Math.round(base + i * (50 + metricIdx * 5)));
+}
+
 export function downloadTemplate() {
   const wb = XLSX.utils.book_new();
 
   // ── Sheet 1: Channels ──
   const channelsHeaders = ['Group', 'Channel', 'Metric', ...PERIOD_HEADERS];
-  const channelsData: (string | number)[][] = [
-    channelsHeaders,
-    ['Base', 'Owned + Paid', 'Planned Spend', 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 0],
-    ['Base', 'Owned + Paid', 'Actual Spend', 950, 1050, 1150, 1250, 1350, 1450, 1550, 1650, 1750, 1850, 1950, 2050, 0],
-    ['Base', 'Owned + Paid', 'Working Spend', 800, 880, 960, 1040, 1120, 1200, 1280, 1360, 1440, 1520, 1600, 1680, 0],
-    ['Base', 'Owned + Paid', 'Impressions', 50000, 55000, 60000, 65000, 70000, 75000, 80000, 85000, 90000, 95000, 100000, 105000, 0],
-    ['Base', 'Owned + Paid', 'Samples', 200, 220, 240, 260, 280, 300, 320, 340, 360, 380, 400, 420, 0],
-    ['Base', 'Owned + Paid', 'CPM & CPP', 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 0],
-    ['Base', 'Owned + Paid', 'Coverage Factor', 0.8, 0.82, 0.84, 0.86, 0.88, 0.9, 0.92, 0.94, 0.96, 0.98, 1.0, 1.0, 0],
-    ['Base', 'Owned + Paid', 'NSV Number', 5000, 5200, 5400, 5600, 5800, 6000, 6200, 6400, 6600, 6800, 7000, 7200, 0],
-    ['Base', 'Owned + Paid', 'MAC Number', 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 0],
-    ['Base', 'Owned + Paid', '% Contribution', 15, 15.5, 16, 16.5, 17, 17.5, 18, 18.5, 19, 19.5, 20, 20.5, 0],
-    ['Base', 'Owned + Paid', 'Volume', 10000, 10500, 11000, 11500, 12000, 12500, 13000, 13500, 14000, 14500, 15000, 15500, 0],
-    ['Base', 'Owned + Paid', 'Scaled Volume', 8000, 8400, 8800, 9200, 9600, 10000, 10400, 10800, 11200, 11600, 12000, 12400, 0],
-    ['Base', 'Owned + Paid', 'NSV $', 50000, 52000, 54000, 56000, 58000, 60000, 62000, 64000, 66000, 68000, 70000, 72000, 0],
-    ['Base', 'Owned + Paid', 'GSV', 60000, 62000, 64000, 66000, 68000, 70000, 72000, 74000, 76000, 78000, 80000, 82000, 0],
-    ['Base', 'Owned + Paid', 'NSV ROI', 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 0],
-    ['Base', 'Owned + Paid', 'MAC ROI', 1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5, 1.55, 1.6, 1.65, 1.7, 1.75, 0],
-    ['Base', 'Owned + Paid', 'Effectiveness', 0.75, 0.77, 0.79, 0.81, 0.83, 0.85, 0.87, 0.89, 0.91, 0.93, 0.95, 0.97, 0],
-    // Example row for another group
-    ['Social', 'Instagram', 'Planned Spend', 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000, 1050, 0],
-  ];
+  const channelsData: (string | number)[][] = [channelsHeaders];
+
+  CHANNEL_GROUPS.forEach((g, gi) => {
+    g.channels.forEach((ch, ci) => {
+      METRICS.forEach((m, mi) => {
+        channelsData.push([g.group, ch, m, ...sampleValues(gi, ci, mi)]);
+      });
+    });
+  });
+
   const channelsWs = XLSX.utils.aoa_to_sheet(channelsData);
   XLSX.utils.book_append_sheet(wb, channelsWs, 'Channels');
 
