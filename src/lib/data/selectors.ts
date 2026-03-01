@@ -153,7 +153,8 @@ export function selectReportData(workbook: ParsedWorkbook | null, period: string
   for (const name of groupOrder) {
     const gRows = groupedRows[name];
     if (!gRows || gRows.length === 0) continue;
-    result.push({ name, collapsible: true, rows: gRows, totals: computeTotals(gRows) });
+    const isSingleLine = gRows.length === 1 && gRows[0].channel === name;
+    result.push({ name, collapsible: !isSingleLine, rows: isSingleLine ? [] : gRows, totals: isSingleLine ? gRows[0] : computeTotals(gRows) });
   }
 
   // Add any remaining groups not in the default order

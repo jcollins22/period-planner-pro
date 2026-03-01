@@ -201,12 +201,12 @@ export function generateReportData(period: string, _trendMode?: string): RowGrou
     {
       name: 'Experiential Marketing',
       collapsible: false,
-      rows: [],
+      rows: [generateRow('Experiential Marketing', isQuarter, GROUP_EXCLUSIONS['Experiential Marketing'])],
     },
     {
       name: 'Shopper Marketing',
       collapsible: false,
-      rows: [],
+      rows: [generateRow('Shopper Marketing', isQuarter, GROUP_EXCLUSIONS['Shopper Marketing'])],
     },
   ];
 
