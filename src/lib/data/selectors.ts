@@ -206,7 +206,7 @@ export function selectConsumptionTiles(workbook: ParsedWorkbook | null, period: 
   }
 
   const tiles: ConsumptionTileData[] = [];
-  const metricLabels = ['Sales', 'Velocity', 'HH Penetration', 'Total Repeat Rate', '$/Household'];
+  const metricLabels = ['Sales', 'Velocity', 'HH Penetration', 'Repeat Rate', '$/Household'];
   const drillableMetrics = new Set(['Sales', 'Velocity']);
 
   for (const label of metricLabels) {

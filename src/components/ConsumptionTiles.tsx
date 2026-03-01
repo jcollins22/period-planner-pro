@@ -10,7 +10,7 @@ interface ConsumptionTilesProps {
 }
 
 const fmtVal = (v: number, label: string) => {
-  if (label === 'HH Penetration' || label === 'Total Repeat Rate') return v.toFixed(1) + '%';
+  if (label === 'HH Penetration' || label === 'Repeat Rate') return v.toFixed(1) + '%';
   if (label === '$/Household') return '$' + v.toFixed(2);
   if (v >= 1000000) return '$' + (v / 1000000).toFixed(1) + 'M';
   if (v >= 1000) return '$' + (v / 1000).toFixed(0) + 'K';
@@ -18,7 +18,7 @@ const fmtVal = (v: number, label: string) => {
 };
 
 const fmtSub = (v: number, label: string) => {
-  if (label === 'HH Penetration' || label === 'Total Repeat Rate') return v.toFixed(1) + '%';
+  if (label === 'HH Penetration' || label === 'Repeat Rate') return v.toFixed(1) + '%';
   if (label === '$/Household') return '$' + v.toFixed(2);
   if (v >= 1000000) return (v / 1000000).toFixed(1) + 'M';
   if (v >= 1000) return (v / 1000).toFixed(0) + 'K';

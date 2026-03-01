@@ -84,7 +84,7 @@ export function generateConsumptionData(period: string, trendMode: string): Cons
     makeTile('Sales', true, 500000, 5000000),
     makeTile('Velocity', true, 1000, 50000),
     makeTile('HH Penetration', false, 10, 85),
-    makeTile('Total Repeat Rate', false, 20, 75),
+    makeTile('Repeat Rate', false, 20, 75),
     makeTile('$/Household', false, 5, 50),
   ];
 }
@@ -98,7 +98,7 @@ const metricConfigs = [
   { label: 'Sales', drillable: true, min: 40000, max: 500000 },
   { label: 'Velocity', drillable: true, min: 80, max: 5000 },
   { label: 'HH Penetration', drillable: false, min: 5, max: 30 },
-  { label: 'Total Repeat Rate', drillable: false, min: 10, max: 45 },
+  { label: 'Repeat Rate', drillable: false, min: 10, max: 45 },
   { label: '$/Household', drillable: false, min: 3, max: 25 },
 ] as const;
 
@@ -112,7 +112,7 @@ export function generateConsumptionPeriodData(trendMode: string): ConsumptionPer
     const rng = seededRandom(`${trendMode}-cperiod-${cfg.label}`);
 
     for (const p of periods) {
-      const isDecimal = cfg.label === 'HH Penetration' || cfg.label === 'Total Repeat Rate' || cfg.label === '$/Household';
+      const isDecimal = cfg.label === 'HH Penetration' || cfg.label === 'Repeat Rate' || cfg.label === '$/Household';
       const total = sVal(rng, cfg.min, cfg.max, isDecimal ? 1 : 0);
       const frozenPct = sVal(rng, 0.4, 0.7, 2);
       const frozen = isDecimal ? Number((total * frozenPct).toFixed(1)) : Math.round(total * frozenPct);
