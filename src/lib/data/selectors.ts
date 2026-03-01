@@ -40,7 +40,7 @@ function getPreviousPeriod(p: string): string | null {
 
 const metricFieldMap: Record<string, { value: keyof RowData; trend: keyof RowData }> = {
   'Planned Spend': { value: 'plannedSpend', trend: 'plannedSpendTrend' },
-  'Actual Spend': { value: 'actualSpend', trend: 'actualSpendTrend' },
+  'Essential Spend (non working)': { value: 'essentialSpend', trend: 'essentialSpendTrend' },
   'Working Spend': { value: 'workingSpend', trend: 'workingSpendTrend' },
   'Impressions': { value: 'impressions', trend: 'impressionsTrend' },
   'Samples': { value: 'samples', trend: 'samplesTrend' },
@@ -71,7 +71,7 @@ function computeTotals(rows: RowData[]): RowData {
   return {
     channel: 'Total',
     plannedSpend: sum(r => r.plannedSpend), plannedSpendTrend: avg(r => r.plannedSpendTrend),
-    actualSpend: sum(r => r.actualSpend), actualSpendTrend: avg(r => r.actualSpendTrend),
+    essentialSpend: sum(r => r.essentialSpend), essentialSpendTrend: avg(r => r.essentialSpendTrend),
     workingSpend: sum(r => r.workingSpend), workingSpendTrend: avg(r => r.workingSpendTrend),
     impressions: sum(r => r.impressions), impressionsTrend: avg(r => r.impressionsTrend),
     samples: sum(r => r.samples), samplesTrend: avg(r => r.samplesTrend),
