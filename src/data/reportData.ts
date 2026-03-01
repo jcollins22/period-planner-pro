@@ -53,21 +53,35 @@ function randomVal(min: number, max: number, decimals = 0): number {
   return Number(val.toFixed(decimals));
 }
 
-function generateRow(channel: string, isQuarter: boolean): RowData {
+type ExcludedMetricKey =
+  | 'plannedSpend' | 'essentialSpend' | 'workingSpend'
+  | 'impressions' | 'samples' | 'cpmCpp'
+  | 'nsvRoi' | 'macRoi' | 'effectiveness';
+
+const GROUP_EXCLUSIONS: Record<string, ExcludedMetricKey[]> = {
+  Base: ['plannedSpend', 'essentialSpend', 'workingSpend', 'impressions', 'samples', 'cpmCpp', 'nsvRoi', 'macRoi', 'effectiveness'],
+  Social: ['samples'],
+  'Experiential Marketing': ['impressions', 'effectiveness'],
+  'Shopper Marketing': ['impressions', 'samples', 'effectiveness'],
+};
+
+function generateRow(channel: string, isQuarter: boolean, excludes: ExcludedMetricKey[] = []): RowData {
+  const ex = new Set(excludes);
+
   const base: RowData = {
     channel,
-    plannedSpend: randomVal(5000, 200000),
-    plannedSpendTrend: randomVal(-15, 15, 1),
-    essentialSpend: randomVal(5000, 200000),
-    essentialSpendTrend: randomVal(-15, 15, 1),
-    workingSpend: randomVal(3000, 150000),
-    workingSpendTrend: randomVal(-15, 15, 1),
-    impressions: randomVal(100000, 5000000),
-    impressionsTrend: randomVal(-15, 15, 1),
-    samples: randomVal(0, 50000),
-    samplesTrend: randomVal(-15, 15, 1),
-    cpmCpp: randomVal(2, 25, 2),
-    cpmCppTrend: randomVal(-15, 15, 1),
+    plannedSpend: ex.has('plannedSpend') ? undefined : randomVal(5000, 200000),
+    plannedSpendTrend: ex.has('plannedSpend') ? undefined : randomVal(-15, 15, 1),
+    essentialSpend: ex.has('essentialSpend') ? undefined : randomVal(5000, 200000),
+    essentialSpendTrend: ex.has('essentialSpend') ? undefined : randomVal(-15, 15, 1),
+    workingSpend: ex.has('workingSpend') ? undefined : randomVal(3000, 150000),
+    workingSpendTrend: ex.has('workingSpend') ? undefined : randomVal(-15, 15, 1),
+    impressions: ex.has('impressions') ? undefined : randomVal(100000, 5000000),
+    impressionsTrend: ex.has('impressions') ? undefined : randomVal(-15, 15, 1),
+    samples: ex.has('samples') ? undefined : randomVal(0, 50000),
+    samplesTrend: ex.has('samples') ? undefined : randomVal(-15, 15, 1),
+    cpmCpp: ex.has('cpmCpp') ? undefined : randomVal(2, 25, 2),
+    cpmCppTrend: ex.has('cpmCpp') ? undefined : randomVal(-15, 15, 1),
     coverageFactor: randomVal(0.1, 1, 2),
     coverageFactorTrend: randomVal(-15, 15, 1),
     nsvNumber: randomVal(100000, 2000000),
@@ -89,12 +103,12 @@ function generateRow(channel: string, isQuarter: boolean): RowData {
       nsvDollarQoQ: randomVal(-15, 15, 1),
       gsvCurrent: randomVal(80000, 3000000),
       gsvQoQ: randomVal(-15, 15, 1),
-      nsvRoiCurrent: randomVal(0.5, 8, 2),
-      nsvRoiQoQ: randomVal(-2, 2, 2),
-      macRoiCurrent: randomVal(0.3, 6, 2),
-      macRoiQoQ: randomVal(-2, 2, 2),
-      effectivenessCurrent: randomVal(0.2, 1, 2),
-      effectivenessQoQ: randomVal(-0.3, 0.3, 2),
+      nsvRoiCurrent: ex.has('nsvRoi') ? undefined : randomVal(0.5, 8, 2),
+      nsvRoiQoQ: ex.has('nsvRoi') ? undefined : randomVal(-2, 2, 2),
+      macRoiCurrent: ex.has('macRoi') ? undefined : randomVal(0.3, 6, 2),
+      macRoiQoQ: ex.has('macRoi') ? undefined : randomVal(-2, 2, 2),
+      effectivenessCurrent: ex.has('effectiveness') ? undefined : randomVal(0.2, 1, 2),
+      effectivenessQoQ: ex.has('effectiveness') ? undefined : randomVal(-0.3, 0.3, 2),
     };
   }
 
@@ -161,27 +175,27 @@ export function generateReportData(period: string, _trendMode?: string): RowGrou
       name: 'Base',
       collapsible: true,
       rows: [
-        generateRow('Other Base Features', isQuarter),
-        generateRow('Competitor Average Price', isQuarter),
-        generateRow('Competitor TDP', isQuarter),
-        generateRow('Inflation', isQuarter),
-        generateRow('Seasonality', isQuarter),
-        generateRow('Temperature', isQuarter),
-        generateRow('Average Price', isQuarter),
-        generateRow('Change of TDP', isQuarter),
-        generateRow('Trade (Feature & Display)', isQuarter),
-        generateRow('Promo', isQuarter),
+        generateRow('Other Base Features', isQuarter, GROUP_EXCLUSIONS['Base']),
+        generateRow('Competitor Average Price', isQuarter, GROUP_EXCLUSIONS['Base']),
+        generateRow('Competitor TDP', isQuarter, GROUP_EXCLUSIONS['Base']),
+        generateRow('Inflation', isQuarter, GROUP_EXCLUSIONS['Base']),
+        generateRow('Seasonality', isQuarter, GROUP_EXCLUSIONS['Base']),
+        generateRow('Temperature', isQuarter, GROUP_EXCLUSIONS['Base']),
+        generateRow('Average Price', isQuarter, GROUP_EXCLUSIONS['Base']),
+        generateRow('Change of TDP', isQuarter, GROUP_EXCLUSIONS['Base']),
+        generateRow('Trade (Feature & Display)', isQuarter, GROUP_EXCLUSIONS['Base']),
+        generateRow('Promo', isQuarter, GROUP_EXCLUSIONS['Base']),
       ],
     },
     {
       name: 'Social',
       collapsible: true,
       rows: [
-        generateRow('Owned + Paid', isQuarter),
-        generateRow('In-house Influencers', isQuarter),
-        generateRow('PR Box', isQuarter),
-        generateRow('Adfairy', isQuarter),
-        generateRow('Kale', isQuarter),
+        generateRow('Owned + Paid', isQuarter, GROUP_EXCLUSIONS['Social']),
+        generateRow('In-house Influencers', isQuarter, GROUP_EXCLUSIONS['Social']),
+        generateRow('PR Box', isQuarter, GROUP_EXCLUSIONS['Social']),
+        generateRow('Adfairy', isQuarter, GROUP_EXCLUSIONS['Social']),
+        generateRow('Kale', isQuarter, GROUP_EXCLUSIONS['Social']),
       ],
     },
     {
