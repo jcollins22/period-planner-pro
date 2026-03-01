@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import { generateConsumptionData, type ConsumptionTileData, type BreakoutItem } from '@/data/consumptionData';
 import type { TrendMode } from '@/components/PeriodSelector';
 
@@ -59,24 +59,52 @@ function BreakoutSection({ title, items, tileLabel, bgClass, textClass }: {
   );
 }
 
+type Segment = 'frozen' | 'fd';
+type BreakoutDim = 'type' | 'package';
+
 function Tile({ tile }: { tile: ConsumptionTileData }) {
-  const [expanded, setExpanded] = useState(false);
-  const clickable = tile.drillable;
+  const [activeSegment, setActiveSegment] = useState<Segment | null>(null);
+  const [activeBreakout, setActiveBreakout] = useState<BreakoutDim | null>(null);
+
+  const handleSegmentClick = (seg: Segment, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (activeSegment === seg) {
+      setActiveSegment(null);
+      setActiveBreakout(null);
+    } else {
+      setActiveSegment(seg);
+      setActiveBreakout(null);
+    }
+  };
+
+  const handleBreakoutClick = (dim: BreakoutDim, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveBreakout(activeBreakout === dim ? null : dim);
+  };
+
+  // Determine which breakout data to show
+  const breakoutItems = activeSegment && activeBreakout ? (() => {
+    if (activeSegment === 'frozen' && activeBreakout === 'type') return tile.frozenTypeBreakout;
+    if (activeSegment === 'frozen' && activeBreakout === 'package') return tile.frozenPackageBreakout;
+    if (activeSegment === 'fd' && activeBreakout === 'type') return tile.fdTypeBreakout;
+    if (activeSegment === 'fd' && activeBreakout === 'package') return tile.fdPackageBreakout;
+    return undefined;
+  })() : undefined;
+
+  const isFrozenActive = activeSegment === 'frozen';
+  const isFdActive = activeSegment === 'fd';
+
+  // Color schemes
+  const frozenColors = { bgClass: 'bg-[hsl(210_50%_96%)]', textClass: 'text-[hsl(210_50%_35%)]' };
+  const fdColors = { bgClass: 'bg-[hsl(35_60%_94%)]', textClass: 'text-[hsl(35_50%_35%)]' };
+  const activeColors = activeSegment === 'frozen' ? frozenColors : fdColors;
 
   return (
-    <div
-      className={`flex-1 min-w-[160px] bg-card border border-border rounded-lg p-3 shadow-sm transition-all ${clickable ? 'cursor-pointer hover:shadow-md hover:border-primary/30' : ''}`}
-      onClick={() => clickable && setExpanded(!expanded)}
-    >
+    <div className="flex-1 min-w-[160px] bg-card border border-border rounded-lg p-3 shadow-sm">
       <div className="flex items-center justify-between mb-1">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           {tile.label}
         </span>
-        {clickable && (
-          expanded
-            ? <ChevronDown className="w-3 h-3 text-muted-foreground" />
-            : <ChevronRight className="w-3 h-3 text-muted-foreground" />
-        )}
       </div>
 
       <div className="flex items-baseline gap-2 mb-2">
@@ -85,44 +113,56 @@ function Tile({ tile }: { tile: ConsumptionTileData }) {
       </div>
 
       <div className="flex gap-2">
-        <div className="flex-1 rounded px-2 py-1 bg-[hsl(210_60%_94%)]">
+        <div
+          className={`flex-1 rounded px-2 py-1 bg-[hsl(210_60%_94%)] transition-all ${tile.drillable ? 'cursor-pointer hover:ring-1 hover:ring-[hsl(210_60%_60%)]' : ''} ${isFrozenActive ? 'ring-2 ring-[hsl(210_60%_50%)]' : ''}`}
+          onClick={tile.drillable ? (e) => handleSegmentClick('frozen', e) : undefined}
+        >
           <div className="text-[9px] font-semibold text-[hsl(210_60%_35%)] uppercase">Frozen</div>
           <div className="text-[11px] font-bold text-[hsl(210_60%_30%)]">{fmtSub(tile.frozen, tile.label)}</div>
           <TrendBadge value={tile.frozenTrend} />
         </div>
-        <div className="flex-1 rounded px-2 py-1 bg-[hsl(35_70%_92%)]">
+        <div
+          className={`flex-1 rounded px-2 py-1 bg-[hsl(35_70%_92%)] transition-all ${tile.drillable ? 'cursor-pointer hover:ring-1 hover:ring-[hsl(35_60%_55%)]' : ''} ${isFdActive ? 'ring-2 ring-[hsl(35_60%_45%)]' : ''}`}
+          onClick={tile.drillable ? (e) => handleSegmentClick('fd', e) : undefined}
+        >
           <div className="text-[9px] font-semibold text-[hsl(35_60%_35%)] uppercase">FD</div>
           <div className="text-[11px] font-bold text-[hsl(35_60%_30%)]">{fmtSub(tile.fd, tile.label)}</div>
           <TrendBadge value={tile.fdTrend} />
         </div>
       </div>
 
-      {expanded && tile.drillable && (
+      {activeSegment && tile.drillable && (
         <div className="mt-2 pt-2 border-t border-border space-y-2">
-          {/* Frozen breakouts */}
-          <div className="space-y-1.5">
-            <div className="text-[9px] font-bold text-[hsl(210_60%_35%)] uppercase">Frozen</div>
-            {tile.frozenTypeBreakout && (
-              <BreakoutSection title="By Type" items={tile.frozenTypeBreakout} tileLabel={tile.label}
-                bgClass="bg-[hsl(210_50%_96%)]" textClass="text-[hsl(210_50%_35%)]" />
-            )}
-            {tile.frozenPackageBreakout && (
-              <BreakoutSection title="By Package" items={tile.frozenPackageBreakout} tileLabel={tile.label}
-                bgClass="bg-[hsl(210_50%_96%)]" textClass="text-[hsl(210_50%_35%)]" />
-            )}
+          {/* Pill buttons */}
+          <div className="flex gap-1.5">
+            {(['type', 'package'] as BreakoutDim[]).map(dim => {
+              const isActive = activeBreakout === dim;
+              return (
+                <button
+                  key={dim}
+                  onClick={(e) => handleBreakoutClick(dim, e)}
+                  className={`px-2.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wide transition-colors ${
+                    isActive
+                      ? `${activeColors.bgClass} ${activeColors.textClass} ring-1 ring-current`
+                      : 'bg-muted text-muted-foreground hover:bg-accent'
+                  }`}
+                >
+                  {dim}
+                </button>
+              );
+            })}
           </div>
-          {/* FD breakouts */}
-          <div className="space-y-1.5">
-            <div className="text-[9px] font-bold text-[hsl(35_60%_35%)] uppercase">FD</div>
-            {tile.fdTypeBreakout && (
-              <BreakoutSection title="By Type" items={tile.fdTypeBreakout} tileLabel={tile.label}
-                bgClass="bg-[hsl(35_60%_94%)]" textClass="text-[hsl(35_50%_35%)]" />
-            )}
-            {tile.fdPackageBreakout && (
-              <BreakoutSection title="By Package" items={tile.fdPackageBreakout} tileLabel={tile.label}
-                bgClass="bg-[hsl(35_60%_94%)]" textClass="text-[hsl(35_50%_35%)]" />
-            )}
-          </div>
+
+          {/* Selected breakout */}
+          {breakoutItems && (
+            <BreakoutSection
+              title={`By ${activeBreakout}`}
+              items={breakoutItems}
+              tileLabel={tile.label}
+              bgClass={activeColors.bgClass}
+              textClass={activeColors.textClass}
+            />
+          )}
         </div>
       )}
     </div>
