@@ -14,16 +14,9 @@ export interface ConsumptionRow {
   [period: string]: number | string; // P1..P13
 }
 
-export interface PeriodRow {
-  channel: string;
-  metric: string;
-  [period: string]: number | string; // P1..P13
-}
-
 export interface ParsedWorkbook {
   channels: ChannelRow[];
   consumption: ConsumptionRow[];
-  period: PeriodRow[];
 }
 
 export interface ValidationError {
@@ -32,7 +25,7 @@ export interface ValidationError {
   message: string;
 }
 
-const REQUIRED_SHEETS = ['Channels', 'Consumption', 'Period'] as const;
+const REQUIRED_SHEETS = ['Channels', 'Consumption'] as const;
 
 export function validateWorkbook(wb: Partial<ParsedWorkbook>, availableSheets: string[]): ValidationError[] {
   const errors: ValidationError[] = [];
@@ -65,19 +58,6 @@ export function validateWorkbook(wb: Partial<ParsedWorkbook>, availableSheets: s
       const row = wb.consumption[i];
       if (!row.metric) {
         errors.push({ sheet: 'Consumption', row: i + 2, message: 'Missing Metric value' });
-      }
-    }
-  }
-
-  // Validate Period sheet
-  if (wb.period) {
-    for (let i = 0; i < wb.period.length; i++) {
-      const row = wb.period[i];
-      if (!row.channel) {
-        errors.push({ sheet: 'Period', row: i + 2, message: 'Missing Channel value' });
-      }
-      if (!row.metric) {
-        errors.push({ sheet: 'Period', row: i + 2, message: 'Missing Metric value' });
       }
     }
   }

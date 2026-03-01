@@ -280,24 +280,76 @@ export function selectConsumptionPeriodData(workbook: ParsedWorkbook | null): Co
 
 // ── Channel Metrics Data Selector ──
 
-export function selectChannelMetricsData(workbook: ParsedWorkbook | null, outputMetric: OutputMetric): ChannelMetricsMap {
-  if (!workbook || workbook.period.length === 0) return generateChannelMetricsData(outputMetric);
+const groupNameMap: Record<string, string> = {
+  'Social': 'Social',
+  'Shopper Marketing': 'Shopper',
+  'Experiential Marketing': 'Experiential',
+};
 
+const channelMetricsGroups = new Set(['Social', 'Shopper Marketing', 'Experiential Marketing']);
+
+// Map output metric dropdown values to channel sheet metric names
+const outputMetricToChannelMetric: Record<string, string> = {
+  'NSV ROI': 'NSV ROI',
+  'Volume %': 'Volume',
+  'GSV': 'GSV',
+  'NSV': 'NSV $',
+  'MAC ROI': 'MAC ROI',
+};
+
+export function selectChannelMetricsData(workbook: ParsedWorkbook | null, outputMetric: OutputMetric): ChannelMetricsMap {
+  if (!workbook || workbook.channels.length === 0) return generateChannelMetricsData(outputMetric);
+
+  const relevantMetrics = new Set(['Working Spend', 'Impressions', 'Samples']);
+  const outputMetricName = outputMetricToChannelMetric[outputMetric] || outputMetric;
+
+  // Aggregate channel rows by group and metric
+  // groupDisplayName -> metricKey -> periodKey -> summed value
   const result: ChannelMetricsMap = {};
 
-  for (const row of workbook.period) {
-    const groupName = row.channel;
-    if (!result[groupName]) result[groupName] = {};
+  for (const row of workbook.channels) {
+    if (!channelMetricsGroups.has(row.group)) continue;
 
-    let metricKey = row.metric;
-    if (metricKey === outputMetric) metricKey = 'Output Metric';
+    const displayGroup = groupNameMap[row.group];
+    const isOutputMetric = row.metric === outputMetricName;
+    if (!relevantMetrics.has(row.metric) && !isOutputMetric) continue;
 
-    if (!result[groupName][metricKey]) result[groupName][metricKey] = {};
+    const metricKey = isOutputMetric ? 'Output Metric' : row.metric;
 
-    for (let i = 1; i <= 13; i++) {
-      const p = `P${i}`;
-      const val = row[p];
-      result[groupName][metricKey][p] = typeof val === 'number' ? val : Number(val) || 0;
+    if (!result[displayGroup]) result[displayGroup] = {};
+    if (!result[displayGroup][metricKey]) result[displayGroup][metricKey] = {};
+
+    const target = result[displayGroup][metricKey];
+
+    if (isOutputMetric) {
+      // Aggregate into quarters
+      for (const [q, periods] of Object.entries(quarterPeriodMap)) {
+        const qVal = periods.reduce((acc, p) => acc + (typeof row[p] === 'number' ? row[p] as number : 0), 0);
+        target[q] = (target[q] || 0) + qVal;
+      }
+    } else {
+      // Per-period values
+      for (let i = 1; i <= 13; i++) {
+        const p = `P${i}`;
+        const val = typeof row[p] === 'number' ? row[p] as number : 0;
+        target[p] = (target[p] || 0) + val;
+      }
+    }
+  }
+
+  // Compute QoQ trends for output metrics
+  const qOrder = ['Q1', 'Q2', 'Q3', 'Q4'];
+  for (const group of Object.values(result)) {
+    const om = group['Output Metric'];
+    if (!om) continue;
+    for (let i = 0; i < qOrder.length; i++) {
+      const q = qOrder[i];
+      const prev = i > 0 ? om[qOrder[i - 1]] : undefined;
+      if (prev !== undefined && prev !== 0) {
+        om[`${q}_trend`] = Number(((om[q] - prev) / Math.abs(prev) * 100).toFixed(1));
+      } else {
+        om[`${q}_trend`] = 0;
+      }
     }
   }
 
