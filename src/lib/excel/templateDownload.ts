@@ -8,6 +8,13 @@ const METRICS = [
   '% Contribution', 'Volume', 'Scaled Volume', 'NSV $', 'GSV', 'NSV ROI', 'MAC ROI', 'Effectiveness',
 ];
 
+const GROUP_EXCLUDED_METRICS: Record<string, string[]> = {
+  Base: ['Planned Spend', 'Essential Spend (non working)', 'Working Spend', 'Impressions', 'Samples', 'CPM & CPP', 'NSV ROI', 'MAC ROI', 'Effectiveness'],
+  Social: ['Samples'],
+  'Experiential Marketing': ['Impressions', 'Effectiveness'],
+  'Shopper Marketing': ['Impressions', 'Samples', 'Effectiveness'],
+};
+
 const CHANNEL_GROUPS: { group: string; channels: string[] }[] = [
   {
     group: 'Base',
@@ -48,8 +55,9 @@ export function downloadTemplate() {
   const channelsData: (string | number)[][] = [channelsHeaders];
 
   CHANNEL_GROUPS.forEach((g, gi) => {
+    const excluded = GROUP_EXCLUDED_METRICS[g.group] ?? [];
     g.channels.forEach((ch, ci) => {
-      METRICS.forEach((m, mi) => {
+      METRICS.filter((m) => !excluded.includes(m)).forEach((m, mi) => {
         channelsData.push([g.group, ch, m, ...sampleValues(gi, ci, mi)]);
       });
     });
