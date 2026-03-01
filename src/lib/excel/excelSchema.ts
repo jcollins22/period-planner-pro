@@ -11,6 +11,7 @@ export interface ConsumptionRow {
   metric: string;
   level1: string;
   level2: string;
+  level3: string;
   [period: string]: number | string; // P1..P13
 }
 

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { ChevronDown, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react';
-import { generateConsumptionData, type ConsumptionTileData } from '@/data/consumptionData';
+import { generateConsumptionData, type ConsumptionTileData, type BreakoutItem } from '@/data/consumptionData';
 import type { TrendMode } from '@/components/PeriodSelector';
 
 interface ConsumptionTilesProps {
@@ -33,6 +33,29 @@ function TrendBadge({ value }: { value: number }) {
       {positive ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
       {positive ? '+' : ''}{value}%
     </span>
+  );
+}
+
+function BreakoutSection({ title, items, tileLabel, bgClass, textClass }: {
+  title: string;
+  items: BreakoutItem[];
+  tileLabel: string;
+  bgClass: string;
+  textClass: string;
+}) {
+  return (
+    <div>
+      <div className={`text-[8px] font-semibold uppercase tracking-wider ${textClass} mb-0.5`}>{title}</div>
+      <div className="grid grid-cols-3 gap-1">
+        {items.map(item => (
+          <div key={item.label} className={`rounded px-1.5 py-1 ${bgClass}`}>
+            <div className={`text-[8px] ${textClass} font-semibold`}>{item.label}</div>
+            <div className={`text-[10px] font-bold ${textClass}`}>{fmtSub(item.value, tileLabel)}</div>
+            <TrendBadge value={item.trend} />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -75,30 +98,30 @@ function Tile({ tile }: { tile: ConsumptionTileData }) {
       </div>
 
       {expanded && tile.drillable && (
-        <div className="mt-2 pt-2 border-t border-border space-y-1.5">
-          <div className="grid grid-cols-2 gap-1.5">
-            <div className="rounded px-1.5 py-1 bg-[hsl(210_50%_96%)]">
-              <div className="text-[8px] text-[hsl(210_50%_40%)] font-semibold">Frozen Core</div>
-              <div className="text-[10px] font-bold text-[hsl(210_50%_25%)]">{fmtSub(tile.frozenCore!.value, tile.label)}</div>
-              <TrendBadge value={tile.frozenCore!.trend} />
-            </div>
-            <div className="rounded px-1.5 py-1 bg-[hsl(210_50%_96%)]">
-              <div className="text-[8px] text-[hsl(210_50%_40%)] font-semibold">Frozen Greek</div>
-              <div className="text-[10px] font-bold text-[hsl(210_50%_25%)]">{fmtSub(tile.frozenGreek!.value, tile.label)}</div>
-              <TrendBadge value={tile.frozenGreek!.trend} />
-            </div>
+        <div className="mt-2 pt-2 border-t border-border space-y-2">
+          {/* Frozen breakouts */}
+          <div className="space-y-1.5">
+            <div className="text-[9px] font-bold text-[hsl(210_60%_35%)] uppercase">Frozen</div>
+            {tile.frozenTypeBreakout && (
+              <BreakoutSection title="By Type" items={tile.frozenTypeBreakout} tileLabel={tile.label}
+                bgClass="bg-[hsl(210_50%_96%)]" textClass="text-[hsl(210_50%_35%)]" />
+            )}
+            {tile.frozenPackageBreakout && (
+              <BreakoutSection title="By Package" items={tile.frozenPackageBreakout} tileLabel={tile.label}
+                bgClass="bg-[hsl(210_50%_96%)]" textClass="text-[hsl(210_50%_35%)]" />
+            )}
           </div>
-          <div className="grid grid-cols-2 gap-1.5">
-            <div className="rounded px-1.5 py-1 bg-[hsl(35_60%_94%)]">
-              <div className="text-[8px] text-[hsl(35_50%_35%)] font-semibold">FD Core</div>
-              <div className="text-[10px] font-bold text-[hsl(35_50%_25%)]">{fmtSub(tile.fdCore!.value, tile.label)}</div>
-              <TrendBadge value={tile.fdCore!.trend} />
-            </div>
-            <div className="rounded px-1.5 py-1 bg-[hsl(35_60%_94%)]">
-              <div className="text-[8px] text-[hsl(35_50%_35%)] font-semibold">FD Creme</div>
-              <div className="text-[10px] font-bold text-[hsl(35_50%_25%)]">{fmtSub(tile.fdCreme!.value, tile.label)}</div>
-              <TrendBadge value={tile.fdCreme!.trend} />
-            </div>
+          {/* FD breakouts */}
+          <div className="space-y-1.5">
+            <div className="text-[9px] font-bold text-[hsl(35_60%_35%)] uppercase">FD</div>
+            {tile.fdTypeBreakout && (
+              <BreakoutSection title="By Type" items={tile.fdTypeBreakout} tileLabel={tile.label}
+                bgClass="bg-[hsl(35_60%_94%)]" textClass="text-[hsl(35_50%_35%)]" />
+            )}
+            {tile.fdPackageBreakout && (
+              <BreakoutSection title="By Package" items={tile.fdPackageBreakout} tileLabel={tile.label}
+                bgClass="bg-[hsl(35_60%_94%)]" textClass="text-[hsl(35_50%_35%)]" />
+            )}
           </div>
         </div>
       )}

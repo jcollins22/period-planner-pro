@@ -56,6 +56,11 @@ const consumptionMetrics: ConsumptionMetricDef[] = [
   { label: '$/Household', drillable: false },
 ];
 
+const FROZEN_TYPES = ['Milk', 'Dark', 'Greek'];
+const FROZEN_PACKAGES = ['8oz', '18oz', '24oz'];
+const FD_TYPES = ['Milk', 'Dark', 'Creme'];
+const FD_PACKAGES = ['1.7oz', '3.4oz', '6.5oz'];
+
 interface ChannelMetricsTableProps {
   channelData?: Record<string, Record<string, Record<string, number>>>;
   consumptionPeriodData?: Record<string, Record<string, Record<string, number>>>;
@@ -112,25 +117,47 @@ export default function ChannelMetricsTable({ channelData, consumptionPeriodData
 
     if (isExpanded) {
       if (m.drillable) {
-        const frozenKey = `${m.label}-Frozen`;
-        const frozenExpanded = expandedSubs.has(frozenKey);
-        consumptionRows.push({
-          key: frozenKey, label: 'Frozen', metric: m.label, rowName: 'Frozen',
-          indent: 1, expandable: true, expanded: frozenExpanded, onToggle: () => toggleSub(frozenKey),
-        });
-        if (frozenExpanded) {
-          consumptionRows.push({ key: `${m.label}-Frozen Core`, label: 'Core', metric: m.label, rowName: 'Frozen Core', indent: 2, expandable: false, expanded: false });
-          consumptionRows.push({ key: `${m.label}-Frozen Greek`, label: 'Greek', metric: m.label, rowName: 'Frozen Greek', indent: 2, expandable: false, expanded: false });
-        }
-        const fdKey = `${m.label}-FD`;
-        const fdExpanded = expandedSubs.has(fdKey);
-        consumptionRows.push({
-          key: fdKey, label: 'FD', metric: m.label, rowName: 'FD',
-          indent: 1, expandable: true, expanded: fdExpanded, onToggle: () => toggleSub(fdKey),
-        });
-        if (fdExpanded) {
-          consumptionRows.push({ key: `${m.label}-FD Core`, label: 'Core', metric: m.label, rowName: 'FD Core', indent: 2, expandable: false, expanded: false });
-          consumptionRows.push({ key: `${m.label}-FD Creme`, label: 'Creme', metric: m.label, rowName: 'FD Creme', indent: 2, expandable: false, expanded: false });
+        for (const segment of ['Frozen', 'FD'] as const) {
+          const segKey = `${m.label}-${segment}`;
+          const segExpanded = expandedSubs.has(segKey);
+          consumptionRows.push({
+            key: segKey, label: segment, metric: m.label, rowName: segment,
+            indent: 1, expandable: true, expanded: segExpanded, onToggle: () => toggleSub(segKey),
+          });
+          if (segExpanded) {
+            const typeLabels = segment === 'Frozen' ? FROZEN_TYPES : FD_TYPES;
+            const pkgLabels = segment === 'Frozen' ? FROZEN_PACKAGES : FD_PACKAGES;
+
+            const typeKey = `${segKey}-Type`;
+            const typeExp = expandedSubs.has(typeKey);
+            consumptionRows.push({
+              key: typeKey, label: 'By Type', metric: m.label, rowName: '',
+              indent: 2, expandable: true, expanded: typeExp, onToggle: () => toggleSub(typeKey),
+            });
+            if (typeExp) {
+              for (const t of typeLabels) {
+                consumptionRows.push({
+                  key: `${typeKey}-${t}`, label: t, metric: m.label, rowName: `${segment} Type ${t}`,
+                  indent: 3, expandable: false, expanded: false,
+                });
+              }
+            }
+
+            const pkgKey = `${segKey}-Package`;
+            const pkgExp = expandedSubs.has(pkgKey);
+            consumptionRows.push({
+              key: pkgKey, label: 'By Package', metric: m.label, rowName: '',
+              indent: 2, expandable: true, expanded: pkgExp, onToggle: () => toggleSub(pkgKey),
+            });
+            if (pkgExp) {
+              for (const p of pkgLabels) {
+                consumptionRows.push({
+                  key: `${pkgKey}-${p}`, label: p, metric: m.label, rowName: `${segment} Package ${p}`,
+                  indent: 3, expandable: false, expanded: false,
+                });
+              }
+            }
+          }
         }
       } else {
         consumptionRows.push({ key: `${m.label}-Frozen`, label: 'Frozen', metric: m.label, rowName: 'Frozen', indent: 1, expandable: false, expanded: false });
@@ -142,8 +169,12 @@ export default function ChannelMetricsTable({ channelData, consumptionPeriodData
   // Count consumption rows that belong to each top-level metric (for rowSpan on "Consumption" group cell)
   const totalConsumptionRows = consumptionRows.length;
 
-  const indentClass = (indent: number) =>
-    indent === 0 ? 'pl-3' : indent === 1 ? 'pl-6' : 'pl-10';
+  const indentClass = (indent: number) => {
+    if (indent === 0) return 'pl-3';
+    if (indent === 1) return 'pl-6';
+    if (indent === 2) return 'pl-10';
+    return 'pl-14';
+  };
 
   return (
     <div className="space-y-4">
@@ -259,7 +290,7 @@ export default function ChannelMetricsTable({ channelData, consumptionPeriodData
                   <tr
                     key={`consumption-${row.key}`}
                     className={`border-b border-border/50 transition-colors hover:bg-report-hover ${
-                      row.indent === 0 ? 'bg-report-group/10 font-semibold' : row.indent === 1 ? 'bg-muted/30' : ''
+                      row.indent === 0 ? 'bg-report-group/10 font-semibold' : row.indent === 1 ? 'bg-muted/30' : row.indent === 2 ? 'bg-muted/15 italic' : ''
                     }`}
                   >
                     {idx === 0 && (
