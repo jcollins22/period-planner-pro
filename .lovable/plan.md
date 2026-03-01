@@ -1,35 +1,32 @@
 
 
-## Plan: Simplify Channel Structure
+## Plan: Exclude Inapplicable Metrics Per Group
 
-### Changes
+### Summary
 
-**1. Remove sub-channels from Experiential Marketing and Shopper Marketing**
+Certain metrics do not apply to certain groups. The data generator and Excel template will be updated so those metrics are never populated or included.
 
-Both groups will have no sub-rows -- they will appear as single-line groups with only totals (no expandable children).
+### Metric exclusion rules
 
-**2. Remove "Essential Spend - Non Working" and "New Social Channel" from Social**
-
-Social will keep 5 sub-channels: Owned + Paid, In-house Influencers, PR Box, Adfairy, Kale.
+| Group | Excluded metrics |
+|-------|-----------------|
+| Base (all sub-channels) | Planned Spend, Essential Spend (non working), Working Spend, Impressions, Samples, CPM & CPP, NSV ROI, MAC ROI, Effectiveness |
+| Social | Samples |
+| Experiential Marketing | Impressions, Effectiveness |
+| Shopper Marketing | Impressions, Samples, Effectiveness |
 
 ### Files to update
 
-**`src/data/reportData.ts`** (report data generator)
-- Social: remove `generateRow('New Social Channel', ...)` and `generateRow('Essential Spend - Non Working', ...)`
-- Experiential Marketing: remove all 4 individual `generateRow(...)` calls, set `rows: []` and `collapsible: false`
-- Shopper Marketing: remove all 3 individual `generateRow(...)` calls, set `rows: []` and `collapsible: false`
+**1. `src/data/reportData.ts`**
+- Modify `generateRow` to accept a list of excluded metric keys, and set those fields to `undefined`
+- Pass the appropriate exclusions when calling `generateRow` for each group
+- Update `computeTotals` so it naturally handles `undefined` values (it already does via the `?? 0` and filter patterns)
 
-**`src/lib/excel/templateDownload.ts`** (template downloader)
-- Social channels: remove "New Social Channel" and "Essential Spend - Non Working"
-- Experiential Marketing: remove all sub-channels (empty array)
-- Shopper Marketing: remove all sub-channels (empty array)
-- This reduces template from 408 rows to: (10 + 5) channels x 17 metrics = 255 rows, plus Experiential and Shopper as group-level-only entries
+**2. `src/lib/excel/templateDownload.ts`**
+- Define per-group metric exclusion lists
+- When generating template rows, skip metric rows that are excluded for that group
+- This reduces the total row count (Base loses 9 metrics per channel = 90 fewer rows, Social loses 1 per channel = 5, etc.)
 
-**`src/components/ReportTable.tsx`** (if it references these channel names directly -- will verify during implementation)
-
-### Result
-- **Base**: 10 sub-channels (unchanged)
-- **Social**: 5 sub-channels (Owned + Paid, In-house Influencers, PR Box, Adfairy, Kale)
-- **Experiential Marketing**: no sub-channels, just a group-level row
-- **Shopper Marketing**: no sub-channels, just a group-level row
+**3. `src/components/ReportTable.tsx`**
+- No structural changes needed -- cells with `undefined` values already render as "---" via the existing `formatNum`/`formatDollar`/`formatPct` helpers
 
