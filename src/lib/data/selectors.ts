@@ -139,7 +139,7 @@ export function selectReportData(workbook: ParsedWorkbook | null, period: string
       }
 
       // Quarter-only metrics: leave undefined when viewing a period
-      const quarterOnlyFields = new Set(['pctContribCurrent', 'nsvDollarCurrent', 'gsvCurrent', 'nsvRoiCurrent', 'macRoiCurrent']);
+      const quarterOnlyFields = new Set(['pctContribCurrent', 'scaledVolCurrent', 'nsvDollarCurrent', 'gsvCurrent', 'nsvRoiCurrent', 'macRoiCurrent']);
       const isQuarterOnlyMetric = quarterOnlyFields.has(mapping.value as string);
       if (isQuarterOnlyMetric && !isQuarter) continue;
 
