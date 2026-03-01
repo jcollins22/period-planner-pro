@@ -1,61 +1,36 @@
 
 
-## Plan: Two-Step Drill-Down on Consumption Tiles
+## Plan: Rename "Total Repeat Rate" and Add Frozen/FD Breakdown to Non-Drillable Metrics
 
-### Current Behavior
-Clicking a Sales or Velocity tile expands to show ALL breakouts (Frozen Type, Frozen Package, FD Type, FD Package) at once. This is cluttered.
+### 1. Rename "Total Repeat Rate" to "Repeat Rate"
 
-### New Behavior
-A progressive drill-down interaction on Sales and Velocity tiles:
+Update the label string in all 6 files where it appears:
 
-1. **Step 1** -- Click on the **Frozen** or **FD** sub-card (not the whole tile). The clicked sub-card highlights and shows two buttons: "Type" and "Package".
-2. **Step 2** -- Click "Type" or "Package" to reveal only that single breakout (3 items in a row).
-3. Clicking a different sub-card or the same one again resets/collapses.
+- `src/data/consumptionData.ts` (lines 87, 101, 115)
+- `src/lib/excel/templateDownload.ts` (line 143)
+- `src/lib/data/selectors.ts` (line 209)
+- `src/components/ConsumptionTiles.tsx` (lines 13, 21)
+- `src/components/ConsumptionMetricsTable.tsx` (lines 23, 35)
+- `src/components/ChannelMetricsTable.tsx` (lines 41, 55)
 
-No changes to HH Penetration, Total Repeat Rate, or $/Household (they remain non-drillable). No changes to Channel Metrics page.
+### 2. Add Frozen/FD Rows to Template for HH Penetration, Repeat Rate, $/Household
 
-### Changes (single file: `src/components/ConsumptionTiles.tsx`)
+Currently the download template only has a single "Total" row for these three metrics. Add Frozen and FD rows (with values summing to Total) for each:
 
-**Replace the single `expanded` boolean state with a two-level state:**
-- `activeSegment`: `null | 'frozen' | 'fd'` -- which sub-card is selected
-- `activeBreakout`: `null | 'type' | 'package'` -- which breakout dimension is shown
+In `src/lib/excel/templateDownload.ts`, after each Total row, add:
+- `['HH Penetration', 'Frozen', '', '', ...]` and `['HH Penetration', 'FD', '', '', ...]` (values split from the total)
+- Same for `Repeat Rate` and `$/Household`
 
-**Make Frozen/FD sub-cards individually clickable (for drillable tiles only):**
-- Add `onClick` handler to each sub-card div (with `e.stopPropagation()` to prevent tile-level click)
-- On click: if already the active segment, reset both states to null; otherwise set `activeSegment` and reset `activeBreakout` to null
-- Add visual indicator (slightly thicker border or ring) on the active sub-card
+These metrics remain **non-drillable** (no Type/Package breakouts) -- they just get the Frozen/FD split that the UI already supports and displays.
 
-**Show breakout picker when a segment is selected but no breakout chosen:**
-- Below the Frozen/FD row, show two small pill buttons: "Type" and "Package"
-- Clicking one sets `activeBreakout` and reveals only that breakout section
+### Files Changed
 
-**Show only the selected breakout:**
-- Render a single `BreakoutSection` based on the combination of `activeSegment` + `activeBreakout`
-- e.g., frozen + type shows `frozenTypeBreakout`, fd + package shows `fdPackageBreakout`
-
-**Remove the old tile-level onClick for drillable tiles** -- interaction is now on the sub-cards only.
-
-### Interaction Flow
-
-```text
-[Sales tile]
-  Total: $2.3M  +4.2%
-  [Frozen $1.4M] [FD $900K]     <-- click "Frozen"
-
-  [Frozen $1.4M ✓] [FD $900K]   <-- Frozen highlighted
-  [Type] [Package]               <-- pick one
-
-  [Frozen $1.4M ✓] [FD $900K]
-  By Type:
-  [Milk $600K] [Dark $500K] [Greek $300K]
-```
-
-### Technical Details
-
-- State: `useState<null | 'frozen' | 'fd'>(null)` and `useState<null | 'type' | 'package'>(null)`
-- Sub-card click toggles segment; resets breakout
-- Pill buttons styled as small rounded buttons with the segment's color scheme
-- Active pill gets a filled background; inactive gets outline style
-- The `BreakoutSection` component stays unchanged -- just conditionally rendered
-- The chevron icon on drillable tiles is removed (no longer a single expand toggle)
+| File | Change |
+|------|--------|
+| `src/data/consumptionData.ts` | Rename label |
+| `src/lib/excel/templateDownload.ts` | Rename label + add Frozen/FD rows for 3 metrics |
+| `src/lib/data/selectors.ts` | Rename label |
+| `src/components/ConsumptionTiles.tsx` | Rename in formatters |
+| `src/components/ConsumptionMetricsTable.tsx` | Rename in config and formatter |
+| `src/components/ChannelMetricsTable.tsx` | Rename in config and formatter |
 
