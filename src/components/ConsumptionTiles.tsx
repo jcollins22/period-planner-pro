@@ -25,13 +25,15 @@ const fmtSub = (v: number, label: string) => {
   return v.toLocaleString();
 };
 
-function TrendBadge({ value }: { value: number }) {
-  if (value === 0) return <span className="text-[10px] text-muted-foreground">0%</span>;
+const PP_METRICS = new Set(['HH Penetration', 'Repeat Rate']);
+
+function TrendBadge({ value, unit = '%' }: { value: number; unit?: string }) {
+  if (value === 0) return <span className="text-[10px] text-muted-foreground">0{unit}</span>;
   const positive = value > 0;
   return (
     <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold ${positive ? 'text-emerald-600' : 'text-red-500'}`}>
       {positive ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
-      {positive ? '+' : ''}{value}%
+      {positive ? '+' : ''}{value}{unit}
     </span>
   );
 }
@@ -63,6 +65,7 @@ type Segment = 'frozen' | 'fd';
 type BreakoutDim = 'type' | 'package';
 
 function Tile({ tile }: { tile: ConsumptionTileData }) {
+  const trendUnit = PP_METRICS.has(tile.label) ? 'pp' : '%';
   const [activeSegment, setActiveSegment] = useState<Segment | null>(null);
   const [activeBreakout, setActiveBreakout] = useState<BreakoutDim | null>(null);
 
@@ -109,7 +112,7 @@ function Tile({ tile }: { tile: ConsumptionTileData }) {
 
       <div className="flex items-baseline gap-2 mb-2">
         <span className="text-lg font-bold text-foreground">{fmtVal(tile.total, tile.label)}</span>
-        <TrendBadge value={tile.trend} />
+        <TrendBadge value={tile.trend} unit={trendUnit} />
       </div>
 
       <div className="flex gap-2">
@@ -119,7 +122,7 @@ function Tile({ tile }: { tile: ConsumptionTileData }) {
         >
           <div className="text-[9px] font-semibold text-[hsl(210_60%_35%)] uppercase">Frozen</div>
           <div className="text-[11px] font-bold text-[hsl(210_60%_30%)]">{fmtSub(tile.frozen, tile.label)}</div>
-          <TrendBadge value={tile.frozenTrend} />
+          <TrendBadge value={tile.frozenTrend} unit={trendUnit} />
         </div>
         <div
           className={`flex-1 rounded px-2 py-1 bg-[hsl(35_70%_92%)] transition-all ${tile.drillable ? 'cursor-pointer hover:ring-1 hover:ring-[hsl(35_60%_55%)]' : ''} ${isFdActive ? 'ring-2 ring-[hsl(35_60%_45%)]' : ''}`}
@@ -127,7 +130,7 @@ function Tile({ tile }: { tile: ConsumptionTileData }) {
         >
           <div className="text-[9px] font-semibold text-[hsl(35_60%_35%)] uppercase">FD</div>
           <div className="text-[11px] font-bold text-[hsl(35_60%_30%)]">{fmtSub(tile.fd, tile.label)}</div>
-          <TrendBadge value={tile.fdTrend} />
+          <TrendBadge value={tile.fdTrend} unit={trendUnit} />
         </div>
       </div>
 

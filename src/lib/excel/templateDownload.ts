@@ -138,27 +138,27 @@ export function downloadTemplate() {
   consumptionData.push(['Velocity', 'FD', 'Package', '3.4oz', ...velFdPkgSplits[1]]);
   consumptionData.push(['Velocity', 'FD', 'Package', '6.5oz', ...velFdPkgSplits[2]]);
 
-  // Non-drillable metrics
+  // Non-drillable metrics — Frozen and FD are INDEPENDENT values (do NOT sum to Total)
   // HH Penetration
   const hhTotal = [0.25, 0.26, 0.27, 0.28, 0.29, 0.30, 0.31, 0.32, 0.33, 0.34, 0.35, 0.36, 0.37];
-  const hhFrozen = hhTotal.map(v => Number((v * 0.55).toFixed(2)));
-  const hhFd = hhTotal.map((v, i) => Number((v - hhFrozen[i]).toFixed(2)));
+  const hhFrozen = [0.18, 0.19, 0.20, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26, 0.27, 0.28, 0.29, 0.30];
+  const hhFd = [0.14, 0.15, 0.15, 0.16, 0.17, 0.17, 0.18, 0.19, 0.19, 0.20, 0.21, 0.21, 0.22];
   consumptionData.push(['HH Penetration', 'Total', '', '', ...hhTotal]);
   consumptionData.push(['HH Penetration', 'Frozen', '', '', ...hhFrozen]);
   consumptionData.push(['HH Penetration', 'FD', '', '', ...hhFd]);
 
   // Repeat Rate
   const rrTotal = [0.40, 0.41, 0.42, 0.43, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.50, 0.51, 0.52];
-  const rrFrozen = rrTotal.map(v => Number((v * 0.6).toFixed(2)));
-  const rrFd = rrTotal.map((v, i) => Number((v - rrFrozen[i]).toFixed(2)));
+  const rrFrozen = [0.35, 0.36, 0.37, 0.38, 0.39, 0.40, 0.41, 0.42, 0.43, 0.44, 0.45, 0.46, 0.47];
+  const rrFd = [0.30, 0.31, 0.32, 0.33, 0.34, 0.35, 0.36, 0.37, 0.38, 0.39, 0.40, 0.41, 0.42];
   consumptionData.push(['Repeat Rate', 'Total', '', '', ...rrTotal]);
   consumptionData.push(['Repeat Rate', 'Frozen', '', '', ...rrFrozen]);
   consumptionData.push(['Repeat Rate', 'FD', '', '', ...rrFd]);
 
   // $/Household
   const dphTotal = [8.50, 8.75, 9.00, 9.25, 9.50, 9.75, 10.00, 10.25, 10.50, 10.75, 11.00, 11.25, 11.50];
-  const dphFrozen = dphTotal.map(v => Number((v * 0.5).toFixed(2)));
-  const dphFd = dphTotal.map((v, i) => Number((v - dphFrozen[i]).toFixed(2)));
+  const dphFrozen = [6.20, 6.40, 6.55, 6.70, 6.90, 7.10, 7.25, 7.40, 7.60, 7.80, 7.95, 8.10, 8.30];
+  const dphFd = [5.80, 5.95, 6.10, 6.30, 6.45, 6.60, 6.80, 6.95, 7.10, 7.30, 7.45, 7.60, 7.80];
   consumptionData.push(['$/Household', 'Total', '', '', ...dphTotal]);
   consumptionData.push(['$/Household', 'Frozen', '', '', ...dphFrozen]);
   consumptionData.push(['$/Household', 'FD', '', '', ...dphFd]);
