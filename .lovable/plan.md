@@ -1,37 +1,53 @@
 
 
-## Plan: Make Experiential Marketing and Shopper Marketing Single Line Items
+## Plan: Rename Sub-Channels, Make Collapsible, and Enforce Quarter-Only Metrics
 
-### Problem
+### Part 1: Rename and restructure Experiential Marketing and Shopper Marketing
 
-Since Experiential Marketing and Shopper Marketing have no sub-channels, they need their own data rows in the Channels sheet (using the group name as the Channel value). Currently:
-- The template generates zero rows for these groups (empty `channels` arrays)
-- The selector in `selectors.ts` skips groups with no rows (`if (!gRows || gRows.length === 0) continue`)
-- The report data generator sets `rows: []` with no data
+Currently these two groups are single non-collapsible line items. Change them to be collapsible groups, each with a single sub-channel:
 
-### Solution
+- **Experiential Marketing** group with one sub-channel named **"Experiential"**
+- **Shopper Marketing** group with one sub-channel named **"Shopper"**
 
-Treat these two groups as having a single "self-named" channel -- the group name itself is the channel name.
+This means they behave like Base and Social -- a collapsible header row showing totals, with a child row underneath.
+
+### Part 2: Quarter-only metrics
+
+The following 5 output metrics should only show data when viewing a quarter (Q1-Q4). When viewing a period (P1-P13), these metrics should be `undefined` (displayed as "---"):
+
+- % Contribution
+- NSV $
+- GSV
+- NSV ROI
+- MAC ROI
+
+Note: Volume, Scaled Volume, and Effectiveness are NOT in this list and will remain available for both periods and quarters.
 
 ### Files to update
 
-**1. `src/lib/excel/templateDownload.ts`**
-- For Experiential Marketing and Shopper Marketing, generate rows where Channel = Group name (e.g., Group="Experiential Marketing", Channel="Experiential Marketing")
-- Apply their respective metric exclusions (Experiential excludes Impressions + Effectiveness; Shopper excludes Impressions + Samples + Effectiveness)
-- This adds metric rows for these two groups to the template
+**1. `src/data/reportData.ts`**
+- Change Experiential Marketing: `rows: [generateRow('Experiential', isQuarter, ...)]`, `collapsible: true`
+- Change Shopper Marketing: `rows: [generateRow('Shopper', isQuarter, ...)]`, `collapsible: true`
+- In `generateRow`, for the quarter-only metrics (% Contribution, NSV $, GSV, NSV ROI, MAC ROI): only generate values when `isQuarter` is true; set to `undefined` when it's a period
 
-**2. `src/data/reportData.ts`**
-- Change Experiential Marketing to have `rows: [generateRow('Experiential Marketing', isQuarter, GROUP_EXCLUSIONS['Experiential Marketing'])]` and `collapsible: false`
-- Change Shopper Marketing to have `rows: [generateRow('Shopper Marketing', isQuarter, GROUP_EXCLUSIONS['Shopper Marketing'])]` and `collapsible: false`
-- This provides sample data when no Excel file is loaded
+**2. `src/lib/excel/templateDownload.ts`**
+- Change Experiential Marketing channels to `['Experiential']`
+- Change Shopper Marketing channels to `['Shopper']`
 
 **3. `src/lib/data/selectors.ts`**
-- Update `selectReportData` so that when a group has exactly one row whose channel name matches the group name, it is treated as a non-collapsible single-line group
-- Set `collapsible: false` and use the single row's data directly as `totals` (instead of computing totals from sub-rows)
-- Remove the `if (!gRows || gRows.length === 0) continue` skip so these groups always appear
+- Remove the single-line detection logic (`isSingleLine` check) since these groups now have a named sub-channel different from the group name
+- For quarter-only metrics: when `isQuarter` is false, skip populating the 5 quarter-only fields (leave them `undefined`) in `selectReportData`
 
-### Result
-- Template will include metric rows for Experiential Marketing and Shopper Marketing
-- Both groups render as single non-collapsible rows in the report table
-- Excluded metrics still show as "---"
+**4. `src/components/ReportTable.tsx`**
+- No changes needed -- collapsible behavior and "---" rendering already work correctly
+
+### Quarter-only metric fields (for reference)
+
+| Metric | Value field | Trend field |
+|--------|------------|-------------|
+| % Contribution | pctContribCurrent | pctContribQoQ |
+| NSV $ | nsvDollarCurrent | nsvDollarQoQ |
+| GSV | gsvCurrent | gsvQoQ |
+| NSV ROI | nsvRoiCurrent | nsvRoiQoQ |
+| MAC ROI | macRoiCurrent | macRoiQoQ |
 
