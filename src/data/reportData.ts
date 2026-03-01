@@ -182,28 +182,17 @@ export function generateReportData(period: string, _trendMode?: string): RowGrou
         generateRow('PR Box', isQuarter),
         generateRow('Adfairy', isQuarter),
         generateRow('Kale', isQuarter),
-        generateRow('New Social Channel', isQuarter),
-        generateRow('Essential Spend - Non Working', isQuarter),
       ],
     },
     {
       name: 'Experiential Marketing',
-      collapsible: true,
-      rows: [
-        generateRow('Samples At/Near Store', isQuarter),
-        generateRow('Samples Away from Store', isQuarter),
-        generateRow('Samples at Event', isQuarter),
-        generateRow('Essential Spend - Non Working', isQuarter),
-      ],
+      collapsible: false,
+      rows: [],
     },
     {
       name: 'Shopper Marketing',
-      collapsible: true,
-      rows: [
-        generateRow('Shopper Tactic 1', isQuarter),
-        generateRow('Shopper Tactic 2', isQuarter),
-        generateRow('Shopper Tactic 3', isQuarter),
-      ],
+      collapsible: false,
+      rows: [],
     },
   ];
 
