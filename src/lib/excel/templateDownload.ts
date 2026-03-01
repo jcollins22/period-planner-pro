@@ -32,11 +32,11 @@ const CHANNEL_GROUPS: { group: string; channels: string[] }[] = [
   },
   {
     group: 'Experiential Marketing',
-    channels: [],
+    channels: ['Experiential'],
   },
   {
     group: 'Shopper Marketing',
-    channels: [],
+    channels: ['Shopper'],
   },
 ];
 

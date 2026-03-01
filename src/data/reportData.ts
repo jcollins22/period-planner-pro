@@ -90,29 +90,28 @@ function generateRow(channel: string, isQuarter: boolean, excludes: ExcludedMetr
     macNumberTrend: randomVal(-15, 15, 1),
   };
 
-  if (isQuarter) {
-    return {
-      ...base,
-      pctContribCurrent: randomVal(0.1, 15, 1),
-      pctContribQoQ: randomVal(-5, 5, 1),
-      volumeCurrent: randomVal(10000, 500000),
-      volumeQoQ: randomVal(-10, 10, 1),
-      scaledVolCurrent: randomVal(10000, 500000),
-      scaledVolQoQ: randomVal(-10, 10, 1),
-      nsvDollarCurrent: randomVal(50000, 2000000),
-      nsvDollarQoQ: randomVal(-15, 15, 1),
-      gsvCurrent: randomVal(80000, 3000000),
-      gsvQoQ: randomVal(-15, 15, 1),
-      nsvRoiCurrent: ex.has('nsvRoi') ? undefined : randomVal(0.5, 8, 2),
-      nsvRoiQoQ: ex.has('nsvRoi') ? undefined : randomVal(-2, 2, 2),
-      macRoiCurrent: ex.has('macRoi') ? undefined : randomVal(0.3, 6, 2),
-      macRoiQoQ: ex.has('macRoi') ? undefined : randomVal(-2, 2, 2),
-      effectivenessCurrent: ex.has('effectiveness') ? undefined : randomVal(0.2, 1, 2),
-      effectivenessQoQ: ex.has('effectiveness') ? undefined : randomVal(-0.3, 0.3, 2),
-    };
-  }
+  // Quarter-only metrics
+  const quarterOnly = isQuarter;
 
-  return base;
+  return {
+    ...base,
+    pctContribCurrent: quarterOnly ? randomVal(0.1, 15, 1) : undefined,
+    pctContribQoQ: quarterOnly ? randomVal(-5, 5, 1) : undefined,
+    volumeCurrent: randomVal(10000, 500000),
+    volumeQoQ: randomVal(-10, 10, 1),
+    scaledVolCurrent: randomVal(10000, 500000),
+    scaledVolQoQ: randomVal(-10, 10, 1),
+    nsvDollarCurrent: quarterOnly ? randomVal(50000, 2000000) : undefined,
+    nsvDollarQoQ: quarterOnly ? randomVal(-15, 15, 1) : undefined,
+    gsvCurrent: quarterOnly ? randomVal(80000, 3000000) : undefined,
+    gsvQoQ: quarterOnly ? randomVal(-15, 15, 1) : undefined,
+    nsvRoiCurrent: quarterOnly && !ex.has('nsvRoi') ? randomVal(0.5, 8, 2) : undefined,
+    nsvRoiQoQ: quarterOnly && !ex.has('nsvRoi') ? randomVal(-2, 2, 2) : undefined,
+    macRoiCurrent: quarterOnly && !ex.has('macRoi') ? randomVal(0.3, 6, 2) : undefined,
+    macRoiQoQ: quarterOnly && !ex.has('macRoi') ? randomVal(-2, 2, 2) : undefined,
+    effectivenessCurrent: ex.has('effectiveness') ? undefined : randomVal(0.2, 1, 2),
+    effectivenessQoQ: ex.has('effectiveness') ? undefined : randomVal(-0.3, 0.3, 2),
+  };
 }
 
 function computeTotals(rows: RowData[], isQuarter: boolean): RowData {
@@ -200,13 +199,13 @@ export function generateReportData(period: string, _trendMode?: string): RowGrou
     },
     {
       name: 'Experiential Marketing',
-      collapsible: false,
-      rows: [generateRow('Experiential Marketing', isQuarter, GROUP_EXCLUSIONS['Experiential Marketing'])],
+      collapsible: true,
+      rows: [generateRow('Experiential', isQuarter, GROUP_EXCLUSIONS['Experiential Marketing'])],
     },
     {
       name: 'Shopper Marketing',
-      collapsible: false,
-      rows: [generateRow('Shopper Marketing', isQuarter, GROUP_EXCLUSIONS['Shopper Marketing'])],
+      collapsible: true,
+      rows: [generateRow('Shopper', isQuarter, GROUP_EXCLUSIONS['Shopper Marketing'])],
     },
   ];
 

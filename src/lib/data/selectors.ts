@@ -138,6 +138,11 @@ export function selectReportData(workbook: ParsedWorkbook | null, period: string
         trendVal = computeTrend(currentVal, prevVal);
       }
 
+      // Quarter-only metrics: leave undefined when viewing a period
+      const quarterOnlyFields = new Set(['pctContribCurrent', 'nsvDollarCurrent', 'gsvCurrent', 'nsvRoiCurrent', 'macRoiCurrent']);
+      const isQuarterOnlyMetric = quarterOnlyFields.has(mapping.value as string);
+      if (isQuarterOnlyMetric && !isQuarter) continue;
+
       (rd as any)[mapping.value] = currentVal;
       (rd as any)[mapping.trend] = trendVal;
     }
@@ -153,8 +158,7 @@ export function selectReportData(workbook: ParsedWorkbook | null, period: string
   for (const name of groupOrder) {
     const gRows = groupedRows[name];
     if (!gRows || gRows.length === 0) continue;
-    const isSingleLine = gRows.length === 1 && gRows[0].channel === name;
-    result.push({ name, collapsible: !isSingleLine, rows: isSingleLine ? [] : gRows, totals: isSingleLine ? gRows[0] : computeTotals(gRows) });
+    result.push({ name, collapsible: true, rows: gRows, totals: computeTotals(gRows) });
   }
 
   // Add any remaining groups not in the default order
