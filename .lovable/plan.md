@@ -1,47 +1,79 @@
+## Plan: Update Consumption Metrics Breakout Structure
 
+### Summary
 
-## Plan: Remove Period Sheet and Source Channel Metrics from Channels Sheet
+Replace the current single breakout (Core/Greek under Frozen, Core/Creme under FD) with two parallel breakout dimensions for Sales and Velocity: **Type** and **Package**. Each breakout sums to its parent (Frozen or FD). No changes to HH Penetration, Total Repeat Rate, or $/Household.
 
-### Problem
-The Period sheet duplicates data already available in the Channels sheet. The Channel Metrics page needs Working Spend, Impressions, Samples, and output metrics for Social, Shopper, and Experiential -- all of which exist in the Channels sheet.
+### New Hierarchy (Sales and Velocity)
 
-### Mapping
-The Channels sheet groups map to Channel Metrics sections:
-- "Social" group (channels: Owned + Paid, In-house Influencers, etc.) -> aggregate to "Social"
-- "Shopper Marketing" group (channel: Shopper) -> "Shopper"
-- "Experiential Marketing" group (channel: Experiential) -> "Experiential"
+```text
+Sales (Total)
+  Frozen
+    By Type: Milk, Dark, Greek  (each sums to Frozen total)
+    By Package: 8oz, 18oz, 24oz (each sums to Frozen total)
+  FD
+    By Type: Milk, Dark, Creme    (each sums to FD total)
+    By Package: 1.7oz, 3.4oz, 6.5oz (each sums to FD total)
 
-Metrics map directly: Working Spend -> Working Spend, Impressions -> Impressions, Samples -> Samples. Output metrics (NSV ROI, MAC ROI, GSV, NSV $, Volume) are also in the Channels sheet and aggregate to quarter level.
+Velocity (same structure as Sales)
+```
 
-### Changes
+### Files to Change
 
-**1. `src/lib/data/selectors.ts` -- Rewrite `selectChannelMetricsData`**
-- Remove dependency on `workbook.period`
-- Instead, read from `workbook.channels`
-- Filter to groups: Social, Experiential Marketing, Shopper Marketing
-- For each group, sum all channels' metric values per period to get the group-level totals
-- Map group names: "Shopper Marketing" -> "Shopper", "Experiential Marketing" -> "Experiential"
-- For non-output metrics (Working Spend, Impressions, Samples): key by P1-P13
-- For output metrics (the selected one, e.g. NSV ROI): aggregate P1-P3 into Q1, P4-P6 into Q2, etc., and compute trend vs previous quarter
+**1. `src/lib/excel/excelSchema.ts` -- Add Level 3 column**
 
-**2. `src/lib/excel/templateDownload.ts` -- Remove Period sheet**
-- Delete the Period sheet generation code (lines ~86-99)
-- Remove it from the workbook entirely
+- Add `level3: string` to `ConsumptionRow` to support the new dimension: Level 1 = Frozen/FD/Total, Level 2 = Type/Package (breakout category), Level 3 = the specific item (Milk, 8oz, etc.)
+- For Total/Frozen/FD aggregate rows, Level 2 and Level 3 remain empty
 
-**3. `src/lib/excel/excelSchema.ts` -- Remove PeriodRow and period references**
-- Remove `PeriodRow` interface
-- Remove `period` from `ParsedWorkbook`
-- Remove Period sheet validation from `validateWorkbook`
-- Remove 'Period' from `REQUIRED_SHEETS`
+**2. `src/lib/excel/loadExcel.ts` -- Parse Level 3**
 
-**4. `src/lib/excel/loadExcel.ts` -- Remove Period sheet parsing**
-- Remove the code that parses the Period sheet into `PeriodRow[]`
+- Read `Level 3` column from the Consumption sheet into `row.level3`
 
-**5. `src/state/dataStore.ts` -- No change expected**
-- Verify it doesn't reference period data directly (it stores the full workbook)
+**3. `src/lib/excel/templateDownload.ts` -- Update sample data**
+
+- Update Consumption sheet headers to include `Level 3`
+- Replace old Core/Greek/Creme rows with new breakout rows for both Sales and Velocity:
+  - `['Sales', 'Frozen', 'Type', 'Milk', ...]`, `['Sales', 'Frozen', 'Type', 'Dark', ...]`, `['Sales', 'Frozen', 'Type', 'Greek', ...]`
+  - `['Sales', 'Frozen', 'Package', '8oz', ...]`, etc.
+  - Same pattern for FD (with Creme instead of Greek, and 1.7oz/3.4oz/6.5oz)
+  - Same pattern repeated for Velocity
+- Ensure sample values for each breakout group sum to parent
+
+**4. `src/data/consumptionData.ts` -- Update interfaces and generators**
+
+- Replace `frozenCore/frozenGreek/fdCore/fdCreme` with new structure:
+  ```
+  frozenTypeBreakout?: { label: string; value: number; trend: number }[]
+  frozenPackageBreakout?: { label: string; value: number; trend: number }[]
+  fdTypeBreakout?: { label: string; value: number; trend: number }[]
+  fdPackageBreakout?: { label: string; value: number; trend: number }[]
+  ```
+- Update `generateConsumptionData` to generate 3-item breakouts for each dimension (Frozen Type: Milk/Dark/Greek, Frozen Package: 8oz/18oz/24oz, FD Type: Milk/Dark/Creme, FD Package: 1.7oz/3.4oz/6.5oz)
+- Update `generateConsumptionPeriodData` to produce rows keyed like `Frozen Type Milk`, `Frozen Package 8oz`, `FD Type Creme`, etc.
+
+**5. `src/components/ConsumptionTiles.tsx` -- Update expanded UI**
+
+- When expanded, show two breakout sections under each of Frozen and FD:
+  - "By Type" row with 3 items (e.g., Milk, Dark, Greek)
+  - "By Package" row with 3 items (e.g., 8oz, 18oz, 24oz)
+- Use a 3-column grid instead of the current 2-column grid for each breakout group
+- Add small "Type" and "Package" labels above each breakout row
+
+**6. `src/components/ConsumptionMetricsTable.tsx` -- Update row hierarchy**
+
+- For drillable metrics, when Frozen/FD is expanded, show two expandable sub-groups: "By Type" and "By Package"
+- Under "By Type": leaf rows for each type item (Milk, Dark, Greek/Creme)
+- Under "By Package": leaf rows for each package size
+- Adds a 4th indent level, so expand state tracking needs another level
+- Row keys: e.g., `Sales-Frozen-Type`, `Sales-Frozen-Type-Milk`, `Sales-Frozen-Package-8oz`
+
+**7. `src/lib/data/selectors.ts` -- Update consumption selectors**
+
+- `selectConsumptionTiles`: Look up breakout items using the new Level 2 (Type/Package) and Level 3 (item name) structure instead of the old Level 2 (Core/Greek/Creme)
+- `selectConsumptionPeriodData`: Build row names like `Frozen Type Milk`, `FD Package 3.4oz` from Level 1 + Level 2 + Level 3
 
 ### What stays the same
-- The Channels and Consumption sheets remain unchanged
-- The Channel Metrics UI component stays the same -- it consumes `ChannelMetricsMap` which keeps the same shape
-- The fallback random data generator remains for when no file is uploaded
 
+- HH Penetration, Total Repeat Rate, $/Household remain non-drillable with just Frozen/FD split
+- Channel Metrics page also needs to update to show the same format breakdowns with collapseable sections
+- Main report table is unaffected
