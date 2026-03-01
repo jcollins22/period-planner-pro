@@ -47,6 +47,19 @@ function sampleValues(groupIdx: number, channelIdx: number, metricIdx: number): 
   return Array.from({ length: 13 }, (_, i) => Math.round(base + i * (50 + metricIdx * 5)));
 }
 
+function splitSample(parentValues: number[], ratios: number[]): number[][] {
+  return ratios.map((r, ri) =>
+    parentValues.map((pv, pi) => {
+      if (ri === ratios.length - 1) {
+        // Last item gets remainder
+        const used = ratios.slice(0, ri).reduce((acc, rr) => acc + Math.round(pv * rr), 0);
+        return pv - used;
+      }
+      return Math.round(pv * r);
+    })
+  );
+}
+
 export function downloadTemplate() {
   const wb = XLSX.utils.book_new();
 
@@ -68,21 +81,68 @@ export function downloadTemplate() {
   XLSX.utils.book_append_sheet(wb, channelsWs, 'Channels');
 
   // ── Sheet 2: Consumption ──
-  const consumptionHeaders = ['Metric', 'Level 1', 'Level 2', ...PERIOD_HEADERS];
-  const consumptionData: (string | number)[][] = [
-    consumptionHeaders,
-    ['Sales', 'Total', '', 5000, 5200, 5400, 5600, 5800, 6000, 6200, 6400, 6600, 6800, 7000, 7200, 0],
-    ['Sales', 'Frozen', '', 3000, 3100, 3200, 3300, 3400, 3500, 3600, 3700, 3800, 3900, 4000, 4100, 0],
-    ['Sales', 'Frozen', 'Core', 2000, 2050, 2100, 2150, 2200, 2250, 2300, 2350, 2400, 2450, 2500, 2550, 0],
-    ['Sales', 'Frozen', 'Greek', 1000, 1050, 1100, 1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500, 1550, 0],
-    ['Sales', 'FD', '', 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 0],
-    ['Sales', 'FD', 'Core', 1200, 1260, 1320, 1380, 1440, 1500, 1560, 1620, 1680, 1740, 1800, 1860, 0],
-    ['Sales', 'FD', 'Creme', 800, 840, 880, 920, 960, 1000, 1040, 1080, 1120, 1160, 1200, 1240, 0],
-    ['Velocity', 'Total', '', 12, 12.5, 13, 13.5, 14, 14.5, 15, 15.5, 16, 16.5, 17, 17.5, 0],
-    ['HH Penetration', 'Total', '', 0.25, 0.26, 0.27, 0.28, 0.29, 0.30, 0.31, 0.32, 0.33, 0.34, 0.35, 0.36, 0],
-    ['Total Repeat Rate', 'Total', '', 0.40, 0.41, 0.42, 0.43, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.50, 0.51, 0],
-    ['$/Household', 'Total', '', 8.50, 8.75, 9.00, 9.25, 9.50, 9.75, 10.00, 10.25, 10.50, 10.75, 11.00, 11.25, 0],
-  ];
+  const consumptionHeaders = ['Metric', 'Level 1', 'Level 2', 'Level 3', ...PERIOD_HEADERS];
+  const consumptionData: (string | number)[][] = [consumptionHeaders];
+
+  // Sales
+  const salesTotalVals = [5000, 5200, 5400, 5600, 5800, 6000, 6200, 6400, 6600, 6800, 7000, 7200, 7400];
+  const salesFrozenVals = [3000, 3100, 3200, 3300, 3400, 3500, 3600, 3700, 3800, 3900, 4000, 4100, 4200];
+  const salesFdVals = salesTotalVals.map((t, i) => t - salesFrozenVals[i]);
+
+  consumptionData.push(['Sales', 'Total', '', '', ...salesTotalVals]);
+  consumptionData.push(['Sales', 'Frozen', '', '', ...salesFrozenVals]);
+  const frozenTypeRatios = [0.4, 0.35, 0.25];
+  const frozenTypeSplits = splitSample(salesFrozenVals, frozenTypeRatios);
+  consumptionData.push(['Sales', 'Frozen', 'Type', 'Milk', ...frozenTypeSplits[0]]);
+  consumptionData.push(['Sales', 'Frozen', 'Type', 'Dark', ...frozenTypeSplits[1]]);
+  consumptionData.push(['Sales', 'Frozen', 'Type', 'Greek', ...frozenTypeSplits[2]]);
+  const frozenPkgRatios = [0.3, 0.4, 0.3];
+  const frozenPkgSplits = splitSample(salesFrozenVals, frozenPkgRatios);
+  consumptionData.push(['Sales', 'Frozen', 'Package', '8oz', ...frozenPkgSplits[0]]);
+  consumptionData.push(['Sales', 'Frozen', 'Package', '18oz', ...frozenPkgSplits[1]]);
+  consumptionData.push(['Sales', 'Frozen', 'Package', '24oz', ...frozenPkgSplits[2]]);
+  consumptionData.push(['Sales', 'FD', '', '', ...salesFdVals]);
+  const fdTypeRatios = [0.45, 0.3, 0.25];
+  const fdTypeSplits = splitSample(salesFdVals, fdTypeRatios);
+  consumptionData.push(['Sales', 'FD', 'Type', 'Milk', ...fdTypeSplits[0]]);
+  consumptionData.push(['Sales', 'FD', 'Type', 'Dark', ...fdTypeSplits[1]]);
+  consumptionData.push(['Sales', 'FD', 'Type', 'Creme', ...fdTypeSplits[2]]);
+  const fdPkgRatios = [0.35, 0.35, 0.3];
+  const fdPkgSplits = splitSample(salesFdVals, fdPkgRatios);
+  consumptionData.push(['Sales', 'FD', 'Package', '1.7oz', ...fdPkgSplits[0]]);
+  consumptionData.push(['Sales', 'FD', 'Package', '3.4oz', ...fdPkgSplits[1]]);
+  consumptionData.push(['Sales', 'FD', 'Package', '6.5oz', ...fdPkgSplits[2]]);
+
+  // Velocity (same structure, different values)
+  const velTotalVals = [12, 12.5, 13, 13.5, 14, 14.5, 15, 15.5, 16, 16.5, 17, 17.5, 18];
+  const velFrozenVals = [7, 7.3, 7.5, 7.8, 8, 8.3, 8.5, 8.8, 9, 9.3, 9.5, 9.8, 10];
+  const velFdVals = velTotalVals.map((t, i) => Number((t - velFrozenVals[i]).toFixed(1)));
+
+  consumptionData.push(['Velocity', 'Total', '', '', ...velTotalVals]);
+  consumptionData.push(['Velocity', 'Frozen', '', '', ...velFrozenVals]);
+  const velFrozenTypeSplits = splitSample(velFrozenVals, frozenTypeRatios);
+  consumptionData.push(['Velocity', 'Frozen', 'Type', 'Milk', ...velFrozenTypeSplits[0]]);
+  consumptionData.push(['Velocity', 'Frozen', 'Type', 'Dark', ...velFrozenTypeSplits[1]]);
+  consumptionData.push(['Velocity', 'Frozen', 'Type', 'Greek', ...velFrozenTypeSplits[2]]);
+  const velFrozenPkgSplits = splitSample(velFrozenVals, frozenPkgRatios);
+  consumptionData.push(['Velocity', 'Frozen', 'Package', '8oz', ...velFrozenPkgSplits[0]]);
+  consumptionData.push(['Velocity', 'Frozen', 'Package', '18oz', ...velFrozenPkgSplits[1]]);
+  consumptionData.push(['Velocity', 'Frozen', 'Package', '24oz', ...velFrozenPkgSplits[2]]);
+  consumptionData.push(['Velocity', 'FD', '', '', ...velFdVals]);
+  const velFdTypeSplits = splitSample(velFdVals, fdTypeRatios);
+  consumptionData.push(['Velocity', 'FD', 'Type', 'Milk', ...velFdTypeSplits[0]]);
+  consumptionData.push(['Velocity', 'FD', 'Type', 'Dark', ...velFdTypeSplits[1]]);
+  consumptionData.push(['Velocity', 'FD', 'Type', 'Creme', ...velFdTypeSplits[2]]);
+  const velFdPkgSplits = splitSample(velFdVals, fdPkgRatios);
+  consumptionData.push(['Velocity', 'FD', 'Package', '1.7oz', ...velFdPkgSplits[0]]);
+  consumptionData.push(['Velocity', 'FD', 'Package', '3.4oz', ...velFdPkgSplits[1]]);
+  consumptionData.push(['Velocity', 'FD', 'Package', '6.5oz', ...velFdPkgSplits[2]]);
+
+  // Non-drillable metrics
+  consumptionData.push(['HH Penetration', 'Total', '', '', 0.25, 0.26, 0.27, 0.28, 0.29, 0.30, 0.31, 0.32, 0.33, 0.34, 0.35, 0.36, 0.37]);
+  consumptionData.push(['Total Repeat Rate', 'Total', '', '', 0.40, 0.41, 0.42, 0.43, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.50, 0.51, 0.52]);
+  consumptionData.push(['$/Household', 'Total', '', '', 8.50, 8.75, 9.00, 9.25, 9.50, 9.75, 10.00, 10.25, 10.50, 10.75, 11.00, 11.25, 11.50]);
+
   const consumptionWs = XLSX.utils.aoa_to_sheet(consumptionData);
   XLSX.utils.book_append_sheet(wb, consumptionWs, 'Consumption');
 

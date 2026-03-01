@@ -1,7 +1,7 @@
 import type { ParsedWorkbook, ChannelRow } from '@/lib/excel/excelSchema';
 import type { RowData, RowGroup } from '@/data/reportData';
 import { generateReportData } from '@/data/reportData';
-import type { ConsumptionTileData } from '@/data/consumptionData';
+import type { ConsumptionTileData, BreakoutItem } from '@/data/consumptionData';
 import { generateConsumptionData, generateConsumptionPeriodData, type ConsumptionPeriodData } from '@/data/consumptionData';
 import type { ChannelMetricsMap, OutputMetric } from '@/data/channelMetricsData';
 import { generateChannelMetricsData } from '@/data/channelMetricsData';
@@ -229,15 +229,16 @@ export function selectConsumptionTiles(workbook: ParsedWorkbook | null, period: 
     };
 
     if (drillable) {
-      const frozenCoreRow = rows.find(r => r.level1 === 'Frozen' && r.level2 === 'Core');
-      const frozenGreekRow = rows.find(r => r.level1 === 'Frozen' && r.level2 === 'Greek');
-      const fdCoreRow = rows.find(r => r.level1 === 'FD' && r.level2 === 'Core');
-      const fdCremeRow = rows.find(r => r.level1 === 'FD' && r.level2 === 'Creme');
+      const makeBreakout = (segment: string, category: string, labels: string[]): BreakoutItem[] =>
+        labels.map(lbl => {
+          const r = rows.find(r => r.level1 === segment && r.level2 === category && r.level3 === lbl);
+          return { label: lbl, value: r ? sumP(r, currentPeriods) : 0, trend: r ? trendFor(r) : 0 };
+        });
 
-      tile.frozenCore = { value: frozenCoreRow ? sumP(frozenCoreRow, currentPeriods) : 0, trend: frozenCoreRow ? trendFor(frozenCoreRow) : 0 };
-      tile.frozenGreek = { value: frozenGreekRow ? sumP(frozenGreekRow, currentPeriods) : 0, trend: frozenGreekRow ? trendFor(frozenGreekRow) : 0 };
-      tile.fdCore = { value: fdCoreRow ? sumP(fdCoreRow, currentPeriods) : 0, trend: fdCoreRow ? trendFor(fdCoreRow) : 0 };
-      tile.fdCreme = { value: fdCremeRow ? sumP(fdCremeRow, currentPeriods) : 0, trend: fdCremeRow ? trendFor(fdCremeRow) : 0 };
+      tile.frozenTypeBreakout = makeBreakout('Frozen', 'Type', ['Milk', 'Dark', 'Greek']);
+      tile.frozenPackageBreakout = makeBreakout('Frozen', 'Package', ['8oz', '18oz', '24oz']);
+      tile.fdTypeBreakout = makeBreakout('FD', 'Type', ['Milk', 'Dark', 'Creme']);
+      tile.fdPackageBreakout = makeBreakout('FD', 'Package', ['1.7oz', '3.4oz', '6.5oz']);
     }
 
     tiles.push(tile);
@@ -260,6 +261,8 @@ export function selectConsumptionPeriodData(workbook: ParsedWorkbook | null): Co
     let rowName: string;
     if (row.level1 === 'Total') {
       rowName = 'Total';
+    } else if (row.level3) {
+      rowName = `${row.level1} ${row.level2} ${row.level3}`;
     } else if (row.level2) {
       rowName = `${row.level1} ${row.level2}`;
     } else {

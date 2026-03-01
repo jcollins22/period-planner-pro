@@ -26,6 +26,7 @@ function parseConsumptionSheet(ws: XLSX.WorkSheet): ConsumptionRow[] {
       metric: String(raw['Metric'] ?? '').trim(),
       level1: String(raw['Level 1'] ?? '').trim(),
       level2: String(raw['Level 2'] ?? '').trim(),
+      level3: String(raw['Level 3'] ?? '').trim(),
     };
     for (let i = 1; i <= 13; i++) {
       const key = `P${i}`;

@@ -1,4 +1,5 @@
-export interface SubSplit {
+export interface BreakoutItem {
+  label: string;
   value: number;
   trend: number;
 }
@@ -12,10 +13,10 @@ export interface ConsumptionTileData {
   fd: number;
   fdTrend: number;
   drillable: boolean;
-  frozenCore?: SubSplit;
-  frozenGreek?: SubSplit;
-  fdCore?: SubSplit;
-  fdCreme?: SubSplit;
+  frozenTypeBreakout?: BreakoutItem[];
+  frozenPackageBreakout?: BreakoutItem[];
+  fdTypeBreakout?: BreakoutItem[];
+  fdPackageBreakout?: BreakoutItem[];
 }
 
 // Simple seeded random based on string hash
@@ -36,6 +37,25 @@ function sVal(rng: () => number, min: number, max: number, decimals = 0): number
   return Number((rng() * (max - min) + min).toFixed(decimals));
 }
 
+const FROZEN_TYPES = ['Milk', 'Dark', 'Greek'];
+const FROZEN_PACKAGES = ['8oz', '18oz', '24oz'];
+const FD_TYPES = ['Milk', 'Dark', 'Creme'];
+const FD_PACKAGES = ['1.7oz', '3.4oz', '6.5oz'];
+
+function splitInto3(rng: () => number, total: number, labels: string[]): BreakoutItem[] {
+  const r1 = sVal(rng, 0.2, 0.5, 3);
+  const r2 = sVal(rng, 0.2, (1 - r1) * 0.9, 3);
+  const r3 = 1 - r1 - r2;
+  const values = [Math.round(total * r1), Math.round(total * r2), Math.round(total * r3)];
+  // Adjust last to ensure exact sum
+  values[2] = total - values[0] - values[1];
+  return labels.map((label, i) => ({
+    label,
+    value: values[i],
+    trend: sVal(rng, -10, 10, 1),
+  }));
+}
+
 export function generateConsumptionData(period: string, trendMode: string): ConsumptionTileData[] {
   const rng = seededRandom(`${period}-${trendMode}-consumption`);
 
@@ -51,11 +71,10 @@ export function generateConsumptionData(period: string, trendMode: string): Cons
     const tile: ConsumptionTileData = { label, total, trend, frozen, frozenTrend, fd, fdTrend, drillable };
 
     if (drillable) {
-      const coreP = sVal(rng, 0.5, 0.75, 2);
-      tile.frozenCore = { value: Math.round(frozen * coreP), trend: sVal(rng, -8, 8, 1) };
-      tile.frozenGreek = { value: frozen - Math.round(frozen * coreP), trend: sVal(rng, -8, 8, 1) };
-      tile.fdCore = { value: Math.round(fd * coreP), trend: sVal(rng, -8, 8, 1) };
-      tile.fdCreme = { value: fd - Math.round(fd * coreP), trend: sVal(rng, -8, 8, 1) };
+      tile.frozenTypeBreakout = splitInto3(rng, frozen, FROZEN_TYPES);
+      tile.frozenPackageBreakout = splitInto3(rng, frozen, FROZEN_PACKAGES);
+      tile.fdTypeBreakout = splitInto3(rng, fd, FD_TYPES);
+      tile.fdPackageBreakout = splitInto3(rng, fd, FD_PACKAGES);
     }
 
     return tile;
@@ -93,14 +112,11 @@ export function generateConsumptionPeriodData(trendMode: string): ConsumptionPer
     const rng = seededRandom(`${trendMode}-cperiod-${cfg.label}`);
 
     for (const p of periods) {
-      const total = sVal(rng, cfg.min, cfg.max, cfg.label === 'HH Penetration' || cfg.label === 'Total Repeat Rate' ? 1 : 0);
+      const isDecimal = cfg.label === 'HH Penetration' || cfg.label === 'Total Repeat Rate' || cfg.label === '$/Household';
+      const total = sVal(rng, cfg.min, cfg.max, isDecimal ? 1 : 0);
       const frozenPct = sVal(rng, 0.4, 0.7, 2);
-      const frozen = cfg.label === 'HH Penetration' || cfg.label === 'Total Repeat Rate' || cfg.label === '$/Household'
-        ? Number((total * frozenPct).toFixed(1))
-        : Math.round(total * frozenPct);
-      const fd = cfg.label === 'HH Penetration' || cfg.label === 'Total Repeat Rate' || cfg.label === '$/Household'
-        ? Number((total - frozen).toFixed(1))
-        : total - frozen;
+      const frozen = isDecimal ? Number((total * frozenPct).toFixed(1)) : Math.round(total * frozenPct);
+      const fd = isDecimal ? Number((total - frozen).toFixed(1)) : total - frozen;
 
       if (!rows['Total']) rows['Total'] = {};
       if (!rows['Frozen']) rows['Frozen'] = {};
@@ -110,20 +126,37 @@ export function generateConsumptionPeriodData(trendMode: string): ConsumptionPer
       rows['FD'][p] = fd;
 
       if (cfg.drillable) {
-        const coreP = sVal(rng, 0.5, 0.75, 2);
-        const frozenCore = Math.round(frozen * coreP);
-        const frozenGreek = Math.round(frozen - frozenCore);
-        const fdCore = Math.round(fd * coreP);
-        const fdCreme = Math.round(fd - fdCore);
+        // Split frozen into Type and Package breakouts
+        const frozenTypeRng = seededRandom(`${trendMode}-${cfg.label}-${p}-frozenType`);
+        const frozenPkgRng = seededRandom(`${trendMode}-${cfg.label}-${p}-frozenPkg`);
+        const fdTypeRng = seededRandom(`${trendMode}-${cfg.label}-${p}-fdType`);
+        const fdPkgRng = seededRandom(`${trendMode}-${cfg.label}-${p}-fdPkg`);
 
-        if (!rows['Frozen Core']) rows['Frozen Core'] = {};
-        if (!rows['Frozen Greek']) rows['Frozen Greek'] = {};
-        if (!rows['FD Core']) rows['FD Core'] = {};
-        if (!rows['FD Creme']) rows['FD Creme'] = {};
-        rows['Frozen Core'][p] = frozenCore;
-        rows['Frozen Greek'][p] = frozenGreek;
-        rows['FD Core'][p] = fdCore;
-        rows['FD Creme'][p] = fdCreme;
+        const frozenTypes = splitInto3(frozenTypeRng, frozen, FROZEN_TYPES);
+        const frozenPkgs = splitInto3(frozenPkgRng, frozen, FROZEN_PACKAGES);
+        const fdTypes = splitInto3(fdTypeRng, fd, FD_TYPES);
+        const fdPkgs = splitInto3(fdPkgRng, fd, FD_PACKAGES);
+
+        for (const item of frozenTypes) {
+          const key = `Frozen Type ${item.label}`;
+          if (!rows[key]) rows[key] = {};
+          rows[key][p] = item.value;
+        }
+        for (const item of frozenPkgs) {
+          const key = `Frozen Package ${item.label}`;
+          if (!rows[key]) rows[key] = {};
+          rows[key][p] = item.value;
+        }
+        for (const item of fdTypes) {
+          const key = `FD Type ${item.label}`;
+          if (!rows[key]) rows[key] = {};
+          rows[key][p] = item.value;
+        }
+        for (const item of fdPkgs) {
+          const key = `FD Package ${item.label}`;
+          if (!rows[key]) rows[key] = {};
+          rows[key][p] = item.value;
+        }
       }
     }
     result[cfg.label] = rows;
