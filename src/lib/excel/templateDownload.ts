@@ -86,17 +86,5 @@ export function downloadTemplate() {
   const consumptionWs = XLSX.utils.aoa_to_sheet(consumptionData);
   XLSX.utils.book_append_sheet(wb, consumptionWs, 'Consumption');
 
-  // ── Sheet 3: Period ──
-  const periodHeaders = ['Channel', 'Metric', ...PERIOD_HEADERS];
-  const periodData: (string | number)[][] = [
-    periodHeaders,
-    ['TV', 'Spend', 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 10500, 0],
-    ['TV', 'Impressions', 100000, 110000, 120000, 130000, 140000, 150000, 160000, 170000, 180000, 190000, 200000, 210000, 0],
-    ['Digital', 'Spend', 3000, 3200, 3400, 3600, 3800, 4000, 4200, 4400, 4600, 4800, 5000, 5200, 0],
-    ['Digital', 'Impressions', 200000, 220000, 240000, 260000, 280000, 300000, 320000, 340000, 360000, 380000, 400000, 420000, 0],
-  ];
-  const periodWs = XLSX.utils.aoa_to_sheet(periodData);
-  XLSX.utils.book_append_sheet(wb, periodWs, 'Period');
-
   XLSX.writeFile(wb, 'mmm-template.xlsx');
 }

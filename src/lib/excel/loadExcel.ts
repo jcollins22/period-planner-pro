@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import type { ParsedWorkbook, ChannelRow, ConsumptionRow, PeriodRow, ValidationError } from './excelSchema';
+import type { ParsedWorkbook, ChannelRow, ConsumptionRow, ValidationError } from './excelSchema';
 import { validateWorkbook } from './excelSchema';
 
 function parseChannelsSheet(ws: XLSX.WorkSheet): ChannelRow[] {
@@ -36,22 +36,6 @@ function parseConsumptionSheet(ws: XLSX.WorkSheet): ConsumptionRow[] {
   });
 }
 
-function parsePeriodSheet(ws: XLSX.WorkSheet): PeriodRow[] {
-  const jsonRows: any[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
-  return jsonRows.map((raw) => {
-    const row: PeriodRow = {
-      channel: String(raw['Channel'] ?? '').trim(),
-      metric: String(raw['Metric'] ?? '').trim(),
-    };
-    for (let i = 1; i <= 13; i++) {
-      const key = `P${i}`;
-      const val = raw[key];
-      row[key] = typeof val === 'number' ? val : (Number(val) || 0);
-    }
-    return row;
-  });
-}
-
 export interface ParseResult {
   workbook: ParsedWorkbook;
   errors: ValidationError[];
@@ -78,18 +62,11 @@ export async function parseExcelFile(file: File): Promise<ParseResult> {
     parsed.consumption = parseConsumptionSheet(consumptionWs);
   }
 
-  // Parse Period
-  const periodWs = getSheet('Period');
-  if (periodWs) {
-    parsed.period = parsePeriodSheet(periodWs);
-  }
-
   const errors = validateWorkbook(parsed, sheetNames);
 
   const workbook: ParsedWorkbook = {
     channels: parsed.channels ?? [],
     consumption: parsed.consumption ?? [],
-    period: parsed.period ?? [],
   };
 
   return { workbook, errors };
