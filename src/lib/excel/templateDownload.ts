@@ -56,7 +56,8 @@ export function downloadTemplate() {
 
   CHANNEL_GROUPS.forEach((g, gi) => {
     const excluded = GROUP_EXCLUDED_METRICS[g.group] ?? [];
-    g.channels.forEach((ch, ci) => {
+    const channels = g.channels.length > 0 ? g.channels : [g.group];
+    channels.forEach((ch, ci) => {
       METRICS.filter((m) => !excluded.includes(m)).forEach((m, mi) => {
         channelsData.push([g.group, ch, m, ...sampleValues(gi, ci, mi)]);
       });
