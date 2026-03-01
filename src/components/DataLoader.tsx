@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
-import { Upload, Check, AlertCircle, X, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
+import { Upload, Check, AlertCircle, X, Loader2, ChevronDown, ChevronRight, Download } from 'lucide-react';
 import { useDataStore } from '@/state/dataStore';
+import { downloadTemplate } from '@/lib/excel/templateDownload';
 
 export default function DataLoader() {
   const { status, errors, fileName, loadFile, clear } = useDataStore();
@@ -27,13 +28,22 @@ export default function DataLoader() {
       />
 
       {status === 'empty' && (
-        <button
-          onClick={() => inputRef.current?.click()}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded bg-secondary text-secondary-foreground hover:bg-accent transition-colors border border-border"
-        >
-          <Upload className="w-3.5 h-3.5" />
-          Load Data (.xlsx)
-        </button>
+        <>
+          <button
+            onClick={() => inputRef.current?.click()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded bg-secondary text-secondary-foreground hover:bg-accent transition-colors border border-border"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            Load Data (.xlsx)
+          </button>
+          <button
+            onClick={downloadTemplate}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded bg-secondary text-secondary-foreground hover:bg-accent transition-colors border border-border"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Download Template
+          </button>
+        </>
       )}
 
       {status === 'loading' && (
