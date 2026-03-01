@@ -20,20 +20,16 @@ const CHANNEL_GROUPS: { group: string; channels: string[] }[] = [
   {
     group: 'Social',
     channels: [
-      'Owned + Paid', 'In-house Influencers', 'PR Box', 'Adfairy',
-      'Kale', 'New Social Channel', 'Essential Spend - Non Working',
+      'Owned + Paid', 'In-house Influencers', 'PR Box', 'Adfairy', 'Kale',
     ],
   },
   {
     group: 'Experiential Marketing',
-    channels: [
-      'Samples At/Near Store', 'Samples Away from Store',
-      'Samples at Event', 'Essential Spend - Non Working',
-    ],
+    channels: [],
   },
   {
     group: 'Shopper Marketing',
-    channels: ['Shopper Tactic 1', 'Shopper Tactic 2', 'Shopper Tactic 3'],
+    channels: [],
   },
 ];
 
