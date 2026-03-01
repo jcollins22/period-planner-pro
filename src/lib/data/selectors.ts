@@ -191,10 +191,16 @@ export function selectConsumptionTiles(workbook: ParsedWorkbook | null, period: 
   const sumP = (row: any, periods: string[]) =>
     periods.reduce((acc: number, p: string) => acc + (typeof row[p] === 'number' ? row[p] as number : 0), 0);
 
-  const trendFor = (row: any) => {
+  const ppMetrics = new Set(['HH Penetration', 'Repeat Rate']);
+
+  const trendFor = (row: any, metric?: string) => {
     const cur = sumP(row, currentPeriods);
     if (!previousPeriods) return 0;
     const prev = sumP(row, previousPeriods);
+    // pp metrics use absolute difference
+    if (metric && ppMetrics.has(metric)) {
+      return Number((cur - prev).toFixed(1));
+    }
     return computeTrend(cur, prev);
   };
 
@@ -220,11 +226,11 @@ export function selectConsumptionTiles(workbook: ParsedWorkbook | null, period: 
     const tile: ConsumptionTileData = {
       label,
       total: totalRow ? sumP(totalRow, currentPeriods) : 0,
-      trend: totalRow ? trendFor(totalRow) : 0,
+      trend: totalRow ? trendFor(totalRow, label) : 0,
       frozen: frozenRow ? sumP(frozenRow, currentPeriods) : 0,
-      frozenTrend: frozenRow ? trendFor(frozenRow) : 0,
+      frozenTrend: frozenRow ? trendFor(frozenRow, label) : 0,
       fd: fdRow ? sumP(fdRow, currentPeriods) : 0,
-      fdTrend: fdRow ? trendFor(fdRow) : 0,
+      fdTrend: fdRow ? trendFor(fdRow, label) : 0,
       drillable,
     };
 

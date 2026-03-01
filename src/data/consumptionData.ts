@@ -59,14 +59,28 @@ function splitInto3(rng: () => number, total: number, labels: string[]): Breakou
 export function generateConsumptionData(period: string, trendMode: string): ConsumptionTileData[] {
   const rng = seededRandom(`${period}-${trendMode}-consumption`);
 
+  const isPpMetric = (l: string) => l === 'HH Penetration' || l === 'Repeat Rate';
+
   const makeTile = (label: string, drillable: boolean, totalMin: number, totalMax: number): ConsumptionTileData => {
-    const total = sVal(rng, totalMin, totalMax, 0);
-    const frozenPct = sVal(rng, 0.4, 0.7, 2);
-    const frozen = Math.round(total * frozenPct);
-    const fd = total - frozen;
-    const trend = sVal(rng, -12, 12, 1);
-    const frozenTrend = sVal(rng, -10, 10, 1);
-    const fdTrend = sVal(rng, -10, 10, 1);
+    const isDecimal = label === 'HH Penetration' || label === 'Repeat Rate' || label === '$/Household';
+    const decimals = isDecimal ? 1 : 0;
+    const total = sVal(rng, totalMin, totalMax, decimals);
+
+    // Non-drillable metrics: Frozen and FD are independent values, not splits of Total
+    let frozen: number, fd: number;
+    if (!drillable) {
+      frozen = sVal(rng, totalMin, totalMax, decimals);
+      fd = sVal(rng, totalMin, totalMax, decimals);
+    } else {
+      const frozenPct = sVal(rng, 0.4, 0.7, 2);
+      frozen = Math.round(total * frozenPct);
+      fd = total - frozen;
+    }
+
+    // pp metrics use absolute difference for trends; others use relative %
+    const trend = isPpMetric(label) ? sVal(rng, -5, 5, 1) : sVal(rng, -12, 12, 1);
+    const frozenTrend = isPpMetric(label) ? sVal(rng, -4, 4, 1) : sVal(rng, -10, 10, 1);
+    const fdTrend = isPpMetric(label) ? sVal(rng, -4, 4, 1) : sVal(rng, -10, 10, 1);
 
     const tile: ConsumptionTileData = { label, total, trend, frozen, frozenTrend, fd, fdTrend, drillable };
 
@@ -113,10 +127,21 @@ export function generateConsumptionPeriodData(trendMode: string): ConsumptionPer
 
     for (const p of periods) {
       const isDecimal = cfg.label === 'HH Penetration' || cfg.label === 'Repeat Rate' || cfg.label === '$/Household';
-      const total = sVal(rng, cfg.min, cfg.max, isDecimal ? 1 : 0);
-      const frozenPct = sVal(rng, 0.4, 0.7, 2);
-      const frozen = isDecimal ? Number((total * frozenPct).toFixed(1)) : Math.round(total * frozenPct);
-      const fd = isDecimal ? Number((total - frozen).toFixed(1)) : total - frozen;
+      const dec = isDecimal ? 1 : 0;
+      const total = sVal(rng, cfg.min, cfg.max, dec);
+
+      // Non-drillable metrics: Frozen and FD are independent values
+      let frozen: number, fd: number;
+      if (!cfg.drillable) {
+        const frozenRng2 = seededRandom(`${trendMode}-cperiod-${cfg.label}-frozen-${p}`);
+        const fdRng2 = seededRandom(`${trendMode}-cperiod-${cfg.label}-fd-${p}`);
+        frozen = sVal(frozenRng2, cfg.min, cfg.max, dec);
+        fd = sVal(fdRng2, cfg.min, cfg.max, dec);
+      } else {
+        const frozenPct = sVal(rng, 0.4, 0.7, 2);
+        frozen = isDecimal ? Number((total * frozenPct).toFixed(1)) : Math.round(total * frozenPct);
+        fd = isDecimal ? Number((total - frozen).toFixed(1)) : total - frozen;
+      }
 
       if (!rows['Total']) rows['Total'] = {};
       if (!rows['Frozen']) rows['Frozen'] = {};
