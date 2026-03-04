@@ -1,37 +1,50 @@
 
 
-## Plan: Fix Blank Template and Confirm Offline-Ready Architecture
+## Plan: Quarter-Level Columns for Output Metrics
 
-### Problem 1: Template Contains Sample Data
+### Problem
+Metrics like % Contribution, Scaled Volume, NSV $, GSV, NSV ROI, and MAC ROI are MMM outputs that only exist at the quarter level. Currently the template forces users to enter them as P1-P13 period data, which the selectors then sum into quarters -- this is incorrect since these values aren't decomposable into periods.
 
-The download template (`src/lib/excel/templateDownload.ts`) has hardcoded non-zero values throughout -- both the `sampleValues()` function for Channels (line 44-48) and all the hardcoded arrays for Consumption (lines 88-164). When you download and re-upload this template, those numbers show up in the dashboard.
+### Solution
+Change the template and parsing/selector logic so these metrics use Q1-Q4 columns instead of P1-P13.
 
-**Fix:** Replace all sample values with zeros so the template is truly blank:
+### Quarter-Only Metrics
+`% Contribution`, `Scaled Volume`, `NSV $`, `GSV`, `NSV ROI`, `MAC ROI`
 
-- **Channels sheet**: Change `sampleValues()` to return an array of 13 zeros instead of computed numbers.
-- **Consumption sheet**: Replace all hardcoded value arrays (salesTotalVals, salesFrozenVals, velTotalVals, hhTotal, rrTotal, dphTotal, etc.) with arrays of 13 zeros.
-- Remove the `splitSample()` helper since it's no longer needed (splitting zero by ratios is just zero).
+### Changes
 
-This means the template will have the correct structure (headers, metric names, group/channel combinations) but all period values will be 0, ready for the user to fill in.
+**1. `src/lib/excel/templateDownload.ts`**
+- For quarter-only metrics, output columns `Q1, Q2, Q3, Q4` with zeros instead of `P1-P13`
+- The Channels sheet header row becomes: `Group, Channel, Metric, P1..P13, Q1, Q2, Q3, Q4` (superset of both)
+- Period-level metrics leave Q1-Q4 blank; quarter-only metrics leave P1-P13 blank
 
-### Problem 2: Offline / No Backend Confirmation
+**2. `src/lib/excel/loadExcel.ts`**
+- Update `parseChannelsSheet` to also read Q1-Q4 columns from each row (in addition to P1-P13)
 
-After searching the codebase, **all computations already run entirely in the browser**:
-- Excel parsing uses the `xlsx` library client-side (`src/lib/excel/loadExcel.ts`)
-- All trend calculations, aggregations, and data transformations happen in `src/lib/data/selectors.ts`
-- State management uses React Context (`src/state/dataStore.ts`)
-- There are zero `fetch()`, `axios`, `supabase`, or API calls anywhere in the source code
-- The app is a Vite + React SPA that can be built as static files
+**3. `src/lib/excel/excelSchema.ts`**
+- `ChannelRow` interface already supports dynamic keys via `[period: string]: number | string`, so Q1-Q4 will work without type changes
 
-No changes needed for offline capability -- the app is already fully client-side.
+**4. `src/lib/data/selectors.ts` -- `selectReportData`**
+- For quarter-only metrics, read the value directly from the `Q1`/`Q2`/etc. key on the row instead of summing P1-P3
+- Trend: compare current quarter value to previous quarter value directly
+- Period view: continue showing `---` for these metrics (existing behavior)
+
+**5. `src/lib/data/selectors.ts` -- `selectChannelMetricsData`**
+- For output metrics (mapped via `outputMetricToChannelMetric`), read Q1-Q4 directly from the row instead of summing periods into quarters
+
+### Template Layout Example (Channels sheet)
+
+```text
+Group | Channel | Metric         | P1 | P2 | ... | P13 | Q1 | Q2 | Q3 | Q4
+Social| Owned   | Working Spend  | 0  | 0  | ... | 0   |    |    |    |
+Social| Owned   | NSV ROI        |    |    | ... |     | 0  | 0  | 0  | 0
+```
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `src/lib/excel/templateDownload.ts` | Zero out all sample data, remove `splitSample` helper |
+| `src/lib/excel/templateDownload.ts` | Add Q1-Q4 headers; quarter-only metrics use Q columns, others use P columns |
+| `src/lib/excel/loadExcel.ts` | Parse Q1-Q4 columns in addition to P1-P13 |
+| `src/lib/data/selectors.ts` | Read Q1-Q4 directly for quarter-only metrics in both `selectReportData` and `selectChannelMetricsData` |
 
-### What Won't Change
-
-- Template still has all correct headers, metric names, group/channel labels, and sheet structure
-- The mock data fallback (shown when no file is loaded) remains as-is -- it only appears when `workbook` is null
