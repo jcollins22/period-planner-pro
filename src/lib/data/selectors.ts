@@ -36,6 +36,12 @@ function getPreviousPeriod(p: string): string | null {
   return num > 1 ? `P${num - 1}` : null;
 }
 
+// ── Quarter-only metrics (use Q1-Q4 columns directly) ──
+
+const quarterOnlyMetrics = new Set([
+  '% Contribution', 'Scaled Volume', 'NSV $', 'GSV', 'NSV ROI', 'MAC ROI',
+]);
+
 // ── Metric name → RowData field mapping ──
 
 const metricFieldMap: Record<string, { value: keyof RowData; trend: keyof RowData }> = {
@@ -130,18 +136,29 @@ export function selectReportData(workbook: ParsedWorkbook | null, period: string
       const metricRow = metrics[metricName];
       if (!metricRow) continue;
 
-      const currentVal = currentPeriods.reduce((acc, p) => acc + (typeof metricRow[p] === 'number' ? metricRow[p] as number : 0), 0);
+      const isQOnly = quarterOnlyMetrics.has(metricName);
+
+      // Quarter-only metrics: skip when viewing a period
+      if (isQOnly && !isQuarter) continue;
+
+      let currentVal: number;
       let trendVal = 0;
 
-      if (previousPeriods) {
-        const prevVal = previousPeriods.reduce((acc, p) => acc + (typeof metricRow[p] === 'number' ? metricRow[p] as number : 0), 0);
-        trendVal = computeTrend(currentVal, prevVal);
+      if (isQOnly) {
+        // Read directly from Q column
+        currentVal = typeof metricRow[period] === 'number' ? metricRow[period] as number : 0;
+        const prevQ = getPreviousQuarter(period);
+        if (prevQ) {
+          const prevVal = typeof metricRow[prevQ] === 'number' ? metricRow[prevQ] as number : 0;
+          trendVal = computeTrend(currentVal, prevVal);
+        }
+      } else {
+        currentVal = currentPeriods.reduce((acc, p) => acc + (typeof metricRow[p] === 'number' ? metricRow[p] as number : 0), 0);
+        if (previousPeriods) {
+          const prevVal = previousPeriods.reduce((acc, p) => acc + (typeof metricRow[p] === 'number' ? metricRow[p] as number : 0), 0);
+          trendVal = computeTrend(currentVal, prevVal);
+        }
       }
-
-      // Quarter-only metrics: leave undefined when viewing a period
-      const quarterOnlyFields = new Set(['pctContribCurrent', 'scaledVolCurrent', 'nsvDollarCurrent', 'gsvCurrent', 'nsvRoiCurrent', 'macRoiCurrent']);
-      const isQuarterOnlyMetric = quarterOnlyFields.has(mapping.value as string);
-      if (isQuarterOnlyMetric && !isQuarter) continue;
 
       (rd as any)[mapping.value] = currentVal;
       (rd as any)[mapping.trend] = trendVal;
@@ -331,10 +348,10 @@ export function selectChannelMetricsData(workbook: ParsedWorkbook | null, output
     const target = result[displayGroup][metricKey];
 
     if (isOutputMetric) {
-      // Aggregate into quarters
-      for (const [q, periods] of Object.entries(quarterPeriodMap)) {
-        const qVal = periods.reduce((acc, p) => acc + (typeof row[p] === 'number' ? row[p] as number : 0), 0);
-        target[q] = (target[q] || 0) + qVal;
+      // Output metrics have Q1-Q4 columns directly
+      for (const q of ['Q1', 'Q2', 'Q3', 'Q4']) {
+        const val = typeof row[q] === 'number' ? row[q] as number : 0;
+        target[q] = (target[q] || 0) + val;
       }
     } else {
       // Per-period values

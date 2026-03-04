@@ -15,6 +15,13 @@ function parseChannelsSheet(ws: XLSX.WorkSheet): ChannelRow[] {
       const val = raw[key];
       row[key] = typeof val === 'number' ? val : (Number(val) || 0);
     }
+    for (let i = 1; i <= 4; i++) {
+      const key = `Q${i}`;
+      const val = raw[key];
+      if (val !== undefined && val !== '') {
+        row[key] = typeof val === 'number' ? val : (Number(val) || 0);
+      }
+    }
     return row;
   });
 }

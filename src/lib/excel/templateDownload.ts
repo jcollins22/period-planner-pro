@@ -1,12 +1,17 @@
 import * as XLSX from 'xlsx';
 
 const PERIOD_HEADERS = ['P1','P2','P3','P4','P5','P6','P7','P8','P9','P10','P11','P12','P13'];
+const QUARTER_HEADERS = ['Q1','Q2','Q3','Q4'];
 
 const METRICS = [
   'Planned Spend', 'Essential Spend (non working)', 'Working Spend', 'Impressions', 'Samples',
   'CPM & CPP', 'Coverage Factor', 'NSV Number', 'MAC Number',
   '% Contribution', 'Volume', 'Scaled Volume', 'NSV $', 'GSV', 'NSV ROI', 'MAC ROI', 'Effectiveness',
 ];
+
+const QUARTER_ONLY_METRICS = new Set([
+  '% Contribution', 'Scaled Volume', 'NSV $', 'GSV', 'NSV ROI', 'MAC ROI',
+]);
 
 const GROUP_EXCLUDED_METRICS: Record<string, string[]> = {
   Base: ['Planned Spend', 'Essential Spend (non working)', 'Working Spend', 'Impressions', 'Samples', 'CPM & CPP', 'NSV ROI', 'MAC ROI', 'Effectiveness'],
@@ -40,13 +45,16 @@ const CHANNEL_GROUPS: { group: string; channels: string[] }[] = [
   },
 ];
 
-const ZEROS = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+const PERIOD_ZEROS = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+const QUARTER_ZEROS = [0, 0, 0, 0];
+const PERIOD_BLANKS = ['', '', '', '', '', '', '', '', '', '', '', '', ''];
+const QUARTER_BLANKS = ['', '', '', ''];
 
 export function downloadTemplate() {
   const wb = XLSX.utils.book_new();
 
   // ── Sheet 1: Channels ──
-  const channelsHeaders = ['Group', 'Channel', 'Metric', ...PERIOD_HEADERS];
+  const channelsHeaders = ['Group', 'Channel', 'Metric', ...PERIOD_HEADERS, ...QUARTER_HEADERS];
   const channelsData: (string | number)[][] = [channelsHeaders];
 
   CHANNEL_GROUPS.forEach((g) => {
@@ -54,7 +62,11 @@ export function downloadTemplate() {
     const channels = g.channels.length > 0 ? g.channels : [g.group];
     channels.forEach((ch) => {
       METRICS.filter((m) => !excluded.includes(m)).forEach((m) => {
-        channelsData.push([g.group, ch, m, ...ZEROS]);
+        if (QUARTER_ONLY_METRICS.has(m)) {
+          channelsData.push([g.group, ch, m, ...PERIOD_BLANKS, ...QUARTER_ZEROS]);
+        } else {
+          channelsData.push([g.group, ch, m, ...PERIOD_ZEROS, ...QUARTER_BLANKS]);
+        }
       });
     });
   });
@@ -67,53 +79,53 @@ export function downloadTemplate() {
   const consumptionData: (string | number)[][] = [consumptionHeaders];
 
   // Sales
-  consumptionData.push(['Sales', 'Total', '', '', ...ZEROS]);
-  consumptionData.push(['Sales', 'Frozen', '', '', ...ZEROS]);
-  consumptionData.push(['Sales', 'Frozen', 'Type', 'Milk', ...ZEROS]);
-  consumptionData.push(['Sales', 'Frozen', 'Type', 'Dark', ...ZEROS]);
-  consumptionData.push(['Sales', 'Frozen', 'Type', 'Greek', ...ZEROS]);
-  consumptionData.push(['Sales', 'Frozen', 'Package', '8oz', ...ZEROS]);
-  consumptionData.push(['Sales', 'Frozen', 'Package', '18oz', ...ZEROS]);
-  consumptionData.push(['Sales', 'Frozen', 'Package', '24oz', ...ZEROS]);
-  consumptionData.push(['Sales', 'FD', '', '', ...ZEROS]);
-  consumptionData.push(['Sales', 'FD', 'Type', 'Milk', ...ZEROS]);
-  consumptionData.push(['Sales', 'FD', 'Type', 'Dark', ...ZEROS]);
-  consumptionData.push(['Sales', 'FD', 'Type', 'Creme', ...ZEROS]);
-  consumptionData.push(['Sales', 'FD', 'Package', '1.7oz', ...ZEROS]);
-  consumptionData.push(['Sales', 'FD', 'Package', '3.4oz', ...ZEROS]);
-  consumptionData.push(['Sales', 'FD', 'Package', '6.5oz', ...ZEROS]);
+  consumptionData.push(['Sales', 'Total', '', '', ...PERIOD_ZEROS]);
+  consumptionData.push(['Sales', 'Frozen', '', '', ...PERIOD_ZEROS]);
+  consumptionData.push(['Sales', 'Frozen', 'Type', 'Milk', ...PERIOD_ZEROS]);
+  consumptionData.push(['Sales', 'Frozen', 'Type', 'Dark', ...PERIOD_ZEROS]);
+  consumptionData.push(['Sales', 'Frozen', 'Type', 'Greek', ...PERIOD_ZEROS]);
+  consumptionData.push(['Sales', 'Frozen', 'Package', '8oz', ...PERIOD_ZEROS]);
+  consumptionData.push(['Sales', 'Frozen', 'Package', '18oz', ...PERIOD_ZEROS]);
+  consumptionData.push(['Sales', 'Frozen', 'Package', '24oz', ...PERIOD_ZEROS]);
+  consumptionData.push(['Sales', 'FD', '', '', ...PERIOD_ZEROS]);
+  consumptionData.push(['Sales', 'FD', 'Type', 'Milk', ...PERIOD_ZEROS]);
+  consumptionData.push(['Sales', 'FD', 'Type', 'Dark', ...PERIOD_ZEROS]);
+  consumptionData.push(['Sales', 'FD', 'Type', 'Creme', ...PERIOD_ZEROS]);
+  consumptionData.push(['Sales', 'FD', 'Package', '1.7oz', ...PERIOD_ZEROS]);
+  consumptionData.push(['Sales', 'FD', 'Package', '3.4oz', ...PERIOD_ZEROS]);
+  consumptionData.push(['Sales', 'FD', 'Package', '6.5oz', ...PERIOD_ZEROS]);
 
   // Velocity
-  consumptionData.push(['Velocity', 'Total', '', '', ...ZEROS]);
-  consumptionData.push(['Velocity', 'Frozen', '', '', ...ZEROS]);
-  consumptionData.push(['Velocity', 'Frozen', 'Type', 'Milk', ...ZEROS]);
-  consumptionData.push(['Velocity', 'Frozen', 'Type', 'Dark', ...ZEROS]);
-  consumptionData.push(['Velocity', 'Frozen', 'Type', 'Greek', ...ZEROS]);
-  consumptionData.push(['Velocity', 'Frozen', 'Package', '8oz', ...ZEROS]);
-  consumptionData.push(['Velocity', 'Frozen', 'Package', '18oz', ...ZEROS]);
-  consumptionData.push(['Velocity', 'Frozen', 'Package', '24oz', ...ZEROS]);
-  consumptionData.push(['Velocity', 'FD', '', '', ...ZEROS]);
-  consumptionData.push(['Velocity', 'FD', 'Type', 'Milk', ...ZEROS]);
-  consumptionData.push(['Velocity', 'FD', 'Type', 'Dark', ...ZEROS]);
-  consumptionData.push(['Velocity', 'FD', 'Type', 'Creme', ...ZEROS]);
-  consumptionData.push(['Velocity', 'FD', 'Package', '1.7oz', ...ZEROS]);
-  consumptionData.push(['Velocity', 'FD', 'Package', '3.4oz', ...ZEROS]);
-  consumptionData.push(['Velocity', 'FD', 'Package', '6.5oz', ...ZEROS]);
+  consumptionData.push(['Velocity', 'Total', '', '', ...PERIOD_ZEROS]);
+  consumptionData.push(['Velocity', 'Frozen', '', '', ...PERIOD_ZEROS]);
+  consumptionData.push(['Velocity', 'Frozen', 'Type', 'Milk', ...PERIOD_ZEROS]);
+  consumptionData.push(['Velocity', 'Frozen', 'Type', 'Dark', ...PERIOD_ZEROS]);
+  consumptionData.push(['Velocity', 'Frozen', 'Type', 'Greek', ...PERIOD_ZEROS]);
+  consumptionData.push(['Velocity', 'Frozen', 'Package', '8oz', ...PERIOD_ZEROS]);
+  consumptionData.push(['Velocity', 'Frozen', 'Package', '18oz', ...PERIOD_ZEROS]);
+  consumptionData.push(['Velocity', 'Frozen', 'Package', '24oz', ...PERIOD_ZEROS]);
+  consumptionData.push(['Velocity', 'FD', '', '', ...PERIOD_ZEROS]);
+  consumptionData.push(['Velocity', 'FD', 'Type', 'Milk', ...PERIOD_ZEROS]);
+  consumptionData.push(['Velocity', 'FD', 'Type', 'Dark', ...PERIOD_ZEROS]);
+  consumptionData.push(['Velocity', 'FD', 'Type', 'Creme', ...PERIOD_ZEROS]);
+  consumptionData.push(['Velocity', 'FD', 'Package', '1.7oz', ...PERIOD_ZEROS]);
+  consumptionData.push(['Velocity', 'FD', 'Package', '3.4oz', ...PERIOD_ZEROS]);
+  consumptionData.push(['Velocity', 'FD', 'Package', '6.5oz', ...PERIOD_ZEROS]);
 
   // HH Penetration
-  consumptionData.push(['HH Penetration', 'Total', '', '', ...ZEROS]);
-  consumptionData.push(['HH Penetration', 'Frozen', '', '', ...ZEROS]);
-  consumptionData.push(['HH Penetration', 'FD', '', '', ...ZEROS]);
+  consumptionData.push(['HH Penetration', 'Total', '', '', ...PERIOD_ZEROS]);
+  consumptionData.push(['HH Penetration', 'Frozen', '', '', ...PERIOD_ZEROS]);
+  consumptionData.push(['HH Penetration', 'FD', '', '', ...PERIOD_ZEROS]);
 
   // Repeat Rate
-  consumptionData.push(['Repeat Rate', 'Total', '', '', ...ZEROS]);
-  consumptionData.push(['Repeat Rate', 'Frozen', '', '', ...ZEROS]);
-  consumptionData.push(['Repeat Rate', 'FD', '', '', ...ZEROS]);
+  consumptionData.push(['Repeat Rate', 'Total', '', '', ...PERIOD_ZEROS]);
+  consumptionData.push(['Repeat Rate', 'Frozen', '', '', ...PERIOD_ZEROS]);
+  consumptionData.push(['Repeat Rate', 'FD', '', '', ...PERIOD_ZEROS]);
 
   // $/Household
-  consumptionData.push(['$/Household', 'Total', '', '', ...ZEROS]);
-  consumptionData.push(['$/Household', 'Frozen', '', '', ...ZEROS]);
-  consumptionData.push(['$/Household', 'FD', '', '', ...ZEROS]);
+  consumptionData.push(['$/Household', 'Total', '', '', ...PERIOD_ZEROS]);
+  consumptionData.push(['$/Household', 'Frozen', '', '', ...PERIOD_ZEROS]);
+  consumptionData.push(['$/Household', 'FD', '', '', ...PERIOD_ZEROS]);
 
   const consumptionWs = XLSX.utils.aoa_to_sheet(consumptionData);
   XLSX.utils.book_append_sheet(wb, consumptionWs, 'Consumption');
